@@ -8,4 +8,3 @@
   * Add network
   * Add a single service that maps all other services together with "requires"
   * Each dir that contains a Dockerfile file can also compose file that will contain the full service definition. If there is no compose file then default to a simple service def
-  *
