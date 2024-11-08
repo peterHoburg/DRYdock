@@ -5,9 +5,10 @@ import (
 	"os"
 
 	"github.com/compose-spec/compose-go/v2/cli"
+	"github.com/compose-spec/compose-go/v2/types"
 )
 
-func LoadComposeFile(composePath string) ([]byte, error) {
+func LoadComposeFile(composePath string) (*types.Project, error) {
 	projectName := "my_project"
 	ctx := context.Background()
 
@@ -21,18 +22,18 @@ func LoadComposeFile(composePath string) ([]byte, error) {
 		return nil, err
 	}
 
-	project, err := cli.ProjectFromOptions(ctx, options)
+	project, err := options.LoadProject(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Use the MarshalYAML method to get YAML representation
-	projectYAML, err := project.MarshalYAML()
-	if err != nil {
-		return nil, err
-	}
+	//// Use the MarshalYAML method to get YAML representation
+	//projectYAML, err := project.MarshalYAML()
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	return projectYAML, nil
+	return project, nil
 
 }
 
@@ -49,4 +50,19 @@ func WriteComposeFile(composePath string, data []byte) error {
 		return err
 	}
 	return nil
+}
+
+func GenerateComposeCommand(composePath string) ([]string, error) {
+	composeCommand := []string{"compose", "-f", composePath, "up", "-d"}
+	return composeCommand, nil
+}
+
+func CombineComposeFiles(composeFiles []*types.Project) (*types.Project, error) {
+	project, composeFiles := composeFiles[0], composeFiles[1:]
+	for _, c := range composeFiles {
+		for k, v := range c.Services {
+			project.Services[k] = v
+		}
+	}
+	return project, nil
 }
