@@ -73,7 +73,7 @@ func main() {
 	output, err := cmd.CombinedOutput()
 	println(string(output))
 
-	if err := cmd.Run(); err != nil {
+	if err != nil {
 		log.Fatal(err)
 	}
 
