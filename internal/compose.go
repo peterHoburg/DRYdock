@@ -107,3 +107,18 @@ func CheckComposeFile(composeFile *types.Project) error {
 	}
 	return nil
 }
+
+func SetNetwork(combinedCompose *types.Project) (*types.Project, error) {
+	if combinedCompose.Networks == nil {
+		combinedCompose.Networks = map[string]types.NetworkConfig{}
+	}
+	networkName := "generate-network-name"
+	//combinedCompose.Networks = map[string]types.NetworkConfig{} TODO remove existing networks. Defualt?
+	combinedCompose.Networks[networkName] = types.NetworkConfig{ // TODO generate this
+		Driver: "bridge",
+	}
+	for _, service := range combinedCompose.Services {
+		service.Networks[networkName] = &types.ServiceNetworkConfig{}
+	}
+	return combinedCompose, nil
+}

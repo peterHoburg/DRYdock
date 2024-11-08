@@ -12,7 +12,6 @@ import (
 
 // TODO
 // Generate a specific name for the docker-compose file
-// generate a combined service,
 // add custom network,
 // change the name of the project name:
 func initLogger() {
@@ -48,6 +47,10 @@ func main() {
 		log.Fatal(err)
 	}
 	combinedComposeFile, err = internal.CombineComposeFiles(childComposeFiles, combinedComposeFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	combinedComposeFile, err = internal.SetNetwork(combinedComposeFile)
 	if err != nil {
 		log.Fatal(err)
 	}
