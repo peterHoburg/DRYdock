@@ -21,27 +21,37 @@ func initLogger() {
 func main() {
 	initLogger()
 
-	dockerFilePaths, e := internal.FindFiles("docker-compose\\.y(?:a)?ml")
+	composeFilePaths, e := internal.FindFiles("docker-compose\\.y(?:a)?ml")
 	if e != nil {
 		log.Fatal(e)
 	}
 
 	composeFiles := make([]*types.Project, 0)
-	for _, dockerfilePath := range dockerFilePaths {
-		composeFile, err := internal.LoadComposeFile(dockerfilePath)
+	for _, composeFilePath := range composeFilePaths { // We are assuming the "combined" docker compose file will be first in the list of docker file paths. This might be a mistake...
+		composeFile, err := internal.LoadComposeFile(composeFilePath)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		err = internal.CheckComposeFile(composeFile)
 		if err != nil {
-			log.Println(dockerfilePath)
+			log.Println(composeFilePath)
 			log.Fatal(err)
 		}
 		composeFiles = append(composeFiles, composeFile)
 	}
-	combinedComposeFile, err := internal.CombineComposeFiles(composeFiles)
-	newDockerComposePath, err := filepath.Abs("./docker-compose.yml")
+	// TODO this will break if composeFiles len < 2
+	childComposeFiles := composeFiles[1:]
+	combinedComposeFile := composeFiles[0]
+	combinedComposeFile, err := internal.SetCombinedDepends(childComposeFiles, combinedComposeFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	combinedComposeFile, err = internal.CombineComposeFiles(childComposeFiles, combinedComposeFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	newDockerComposePath, err := filepath.Abs("./docker-compose-new.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
