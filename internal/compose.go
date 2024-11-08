@@ -68,6 +68,10 @@ func CombineComposeFiles(composeFiles []*types.Project) (*types.Project, error) 
 	return project, nil
 }
 
+func GenerateCombinedService(composeFiles []*types.Project) (*types.ServiceConfig, error) {
+
+}
+
 func CheckComposeFile(composeFile *types.Project) error {
 	for _, service := range composeFile.Services {
 		build := service.Build

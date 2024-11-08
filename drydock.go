@@ -10,14 +10,20 @@ import (
 	"drydock/internal"
 )
 
+// TODO
+// Generate a specific name for the docker-compose file
+// generate a combined service,
+// add custom network,
+// change the name of the project name:
 func initLogger() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 }
 func main() {
+	initLogger()
 
 	dockerFilePaths, e := internal.FindFiles("docker-compose\\.y(?:a)?ml")
 	if e != nil {
-		panic(e)
+		log.Fatal(e)
 	}
 
 	composeFiles := make([]*types.Project, 0)
@@ -37,16 +43,16 @@ func main() {
 	combinedComposeFile, err := internal.CombineComposeFiles(composeFiles)
 	newDockerComposePath, err := filepath.Abs("./docker-compose.yml")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	combinedComposeFileYaml, err := combinedComposeFile.MarshalYAML()
 	if err != nil {
-		println(err.Error())
+		log.Fatal(err)
 	}
 	err = internal.WriteComposeFile(newDockerComposePath, combinedComposeFileYaml)
 
 	if err != nil {
-		println(err.Error())
+		log.Fatal(err)
 	}
 
 	composeCommand, err := internal.GenerateComposeCommand(newDockerComposePath)
