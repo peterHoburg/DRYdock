@@ -1,4 +1,4 @@
 services:
   test-1:
     build:
-      dockerfile: .
+      dockerfile: ./Dockerfile

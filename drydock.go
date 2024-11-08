@@ -10,6 +10,9 @@ import (
 	"drydock/internal"
 )
 
+func initLogger() {
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
+}
 func main() {
 
 	dockerFilePaths, e := internal.FindFiles("docker-compose\\.y(?:a)?ml")
@@ -21,7 +24,13 @@ func main() {
 	for _, dockerfilePath := range dockerFilePaths {
 		composeFile, err := internal.LoadComposeFile(dockerfilePath)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
+		}
+
+		err = internal.CheckComposeFile(composeFile)
+		if err != nil {
+			log.Println(dockerfilePath)
+			log.Fatal(err)
 		}
 		composeFiles = append(composeFiles, composeFile)
 	}

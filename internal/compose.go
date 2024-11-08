@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"os"
 
 	"github.com/compose-spec/compose-go/v2/cli"
@@ -53,7 +54,7 @@ func WriteComposeFile(composePath string, data []byte) error {
 }
 
 func GenerateComposeCommand(composePath string) ([]string, error) {
-	composeCommand := []string{"compose", "-f", composePath, "up", "-d"}
+	composeCommand := []string{"compose", "-f", composePath, "up", "--build", "-d"}
 	return composeCommand, nil
 }
 
@@ -65,4 +66,17 @@ func CombineComposeFiles(composeFiles []*types.Project) (*types.Project, error) 
 		}
 	}
 	return project, nil
+}
+
+func CheckComposeFile(composeFile *types.Project) error {
+	for _, service := range composeFile.Services {
+		build := service.Build
+		if build == nil {
+			return nil
+		}
+		if build.Dockerfile == "." {
+			return errors.New("int docker-compose build.dockerfile cannot be '.' try './Dockerfile'")
+		}
+	}
+	return nil
 }
