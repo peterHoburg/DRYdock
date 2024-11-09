@@ -1,0 +1,4 @@
+services:
+  combined:
+    build:
+      dockerfile: ./Dockerfile
