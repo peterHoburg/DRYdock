@@ -1,11 +1,8 @@
-import time
+from fastapi import FastAPI
 
-def main():
-    print("Hello from example-project-2!")
-    while True:
-        time.sleep(1000)
+app = FastAPI()
 
 
-
-if __name__ == "__main__":
-    main()
+@app.get("/")
+async def root():
+    return {"message": "example project 2"}

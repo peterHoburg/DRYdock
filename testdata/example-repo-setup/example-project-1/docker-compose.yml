@@ -2,3 +2,5 @@ services:
   test-1:
     build:
       dockerfile: ./Dockerfile
+    ports:
+      - 8000:8000
