@@ -10,6 +10,7 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/types"
 
+	"drydock/api"
 	"drydock/internal"
 )
 
@@ -21,6 +22,9 @@ func initLogger() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 }
 func main() {
+	api.Start()
+}
+func mainCli() {
 	initLogger()
 	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
 	networkName := fmt.Sprintf("network-%d", time.Now().Unix())

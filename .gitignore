@@ -25,3 +25,5 @@ go.work.sum
 .env
 
 **/.venv
+/tmp/build-errors.log
+/tmp/main
