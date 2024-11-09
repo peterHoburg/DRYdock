@@ -9,6 +9,8 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 )
 
+// LoadComposeFile loads the docker-compose file into github.com/compose-spec/compose-go/v2/types.Project object.
+// Also checks the compose files for basic correctness.
 func LoadComposeFile(composePath string, projectName string) (*types.Project, error) {
 	ctx := context.Background()
 
@@ -35,6 +37,7 @@ func LoadComposeFile(composePath string, projectName string) (*types.Project, er
 
 }
 
+// WriteComposeFile writes the given data to a file specified by composePath, creating it if it doesn't exist.
 func WriteComposeFile(composePath string, data []byte) error {
 	f, err := os.OpenFile(composePath, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
@@ -50,21 +53,24 @@ func WriteComposeFile(composePath string, data []byte) error {
 	return nil
 }
 
-func GenerateComposeCommand(composePath string) ([]string, error) {
+// GenerateComposeCommand creates a Docker Compose command using the specified compose file path with '-f'.
+func GenerateComposeCommand(composePath string) []string {
 	composeCommand := []string{"compose", "-f", composePath, "up", "--build", "-d"}
-	return composeCommand, nil
+	return composeCommand
 }
 
-func CombineComposeFiles(composeFiles []*types.Project, combinedComposeFile *types.Project) (*types.Project, error) {
+// CombineComposeFiles merges multiple Docker Compose project files into a single project file.
+// It iterates over each service in the provided compose files and adds them to the combined compose file.
+func CombineComposeFiles(composeFiles []*types.Project, combinedComposeFile *types.Project) *types.Project {
 	for _, c := range composeFiles {
 		for k, v := range c.Services {
 			combinedComposeFile.Services[k] = v
 		}
 	}
-	return combinedComposeFile, nil
+	return combinedComposeFile
 }
 
-func SetCombinedDepends(composeFiles []*types.Project, combinedCompose *types.Project) (*types.Project, error) {
+func SetCombinedDepends(composeFiles []*types.Project, combinedCompose *types.Project) *types.Project {
 	service := types.ServiceConfig{
 		Name:        "combined",
 		Build:       nil,
@@ -89,7 +95,7 @@ func SetCombinedDepends(composeFiles []*types.Project, combinedCompose *types.Pr
 	}
 	service.DependsOn = dependsOn
 	combinedCompose.Services["combined"] = service
-	return combinedCompose, nil
+	return combinedCompose
 }
 
 func CheckComposeFile(composeFile *types.Project) error {
@@ -105,7 +111,7 @@ func CheckComposeFile(composeFile *types.Project) error {
 	return nil
 }
 
-func SetNetwork(combinedCompose *types.Project, networkName string) (*types.Project, error) {
+func SetNetwork(combinedCompose *types.Project, networkName string) *types.Project {
 	if combinedCompose.Networks == nil {
 		combinedCompose.Networks = map[string]types.NetworkConfig{}
 	}
@@ -117,10 +123,10 @@ func SetNetwork(combinedCompose *types.Project, networkName string) (*types.Proj
 		delete(service.Networks, "default")
 		service.Networks[networkName] = &types.ServiceNetworkConfig{}
 	}
-	return combinedCompose, nil
+	return combinedCompose
 }
 
-func SetEnvFile(combinedCompose *types.Project, envFilePath string) (*types.Project, error) {
+func SetEnvFile(combinedCompose *types.Project, envFilePath string) *types.Project {
 	for serviceName, service := range combinedCompose.Services {
 		service.EnvFiles = []types.EnvFile{
 			{
@@ -131,5 +137,5 @@ func SetEnvFile(combinedCompose *types.Project, envFilePath string) (*types.Proj
 		}
 		combinedCompose.Services[serviceName] = service
 	}
-	return combinedCompose, nil
+	return combinedCompose
 }

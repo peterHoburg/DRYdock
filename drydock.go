@@ -40,10 +40,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	rootComposePath, err := internal.FindFileInCurrentDir(dockerComposeRegex)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	rootComposeFile, err := internal.LoadComposeFile(rootComposePath, projectName)
 	if err != nil {
 		log.Println(rootComposePath)
@@ -59,35 +61,22 @@ func main() {
 		}
 		childComposeFiles = append(childComposeFiles, composeFile)
 	}
-	combinedComposeFile, err := internal.SetCombinedDepends(childComposeFiles, rootComposeFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	combinedComposeFile, err = internal.CombineComposeFiles(childComposeFiles, combinedComposeFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	combinedComposeFile, err = internal.SetNetwork(combinedComposeFile, networkName)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	combinedComposeFile, err = internal.SetEnvFile(combinedComposeFile, envFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
+	combinedComposeFile := internal.SetCombinedDepends(childComposeFiles, rootComposeFile)
+	combinedComposeFile = internal.CombineComposeFiles(childComposeFiles, combinedComposeFile)
+	combinedComposeFile = internal.SetNetwork(combinedComposeFile, networkName)
+	combinedComposeFile = internal.SetEnvFile(combinedComposeFile, envFilePath)
 
 	combinedComposeFileYaml, err := combinedComposeFile.MarshalYAML()
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = internal.WriteComposeFile(newDockerComposePath, combinedComposeFileYaml)
 
+	err = internal.WriteComposeFile(newDockerComposePath, combinedComposeFileYaml)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	composeCommand, err := internal.GenerateComposeCommand(newDockerComposePath)
+	composeCommand := internal.GenerateComposeCommand(newDockerComposePath)
 	cmd := exec.Command("docker", composeCommand...)
 	output, err := cmd.CombinedOutput()
 	println(string(output))
