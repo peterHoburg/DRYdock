@@ -123,3 +123,7 @@ func SetNetwork(combinedCompose *types.Project) (*types.Project, error) {
 	}
 	return combinedCompose, nil
 }
+
+func SetEnvironmentFile(combinedCompose *types.Project) (*types.Project, error) {
+	// TODO
+}

@@ -11,6 +11,7 @@ import (
 )
 
 // TODO
+// Why is both environment and env_file being added in test-1 compose?
 // Generate a specific name for the docker-compose file
 // add custom network,
 // change the name of the project name:
