@@ -124,6 +124,17 @@ func SetNetwork(combinedCompose *types.Project) (*types.Project, error) {
 	return combinedCompose, nil
 }
 
-func SetEnvironmentFile(combinedCompose *types.Project) (*types.Project, error) {
-	// TODO
+func SetEnvironmentFile(combinedCompose *types.Project, envFilePath string) (*types.Project, error) {
+	// TODO why are TESTVAR1 TESTVAR2 being added to test-1 service?
+	for serviceName, service := range combinedCompose.Services {
+		service.EnvFiles = []types.EnvFile{
+			{
+				Path:     envFilePath,
+				Required: true,
+				Format:   "",
+			},
+		}
+		combinedCompose.Services[serviceName] = service
+	}
+	return combinedCompose, nil
 }

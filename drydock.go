@@ -55,6 +55,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// TODO generate the file path based on env that is being run
+	combinedComposeFile, err = internal.SetEnvironmentFile(combinedComposeFile, "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	newDockerComposePath, err := filepath.Abs("./docker-compose-new.yml")
 	if err != nil {
 		log.Fatal(err)
