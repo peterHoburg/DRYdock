@@ -13,6 +13,10 @@ import (
 	"drydock/internal"
 )
 
+// TODO
+// Set env file per service
+// Add tests
+
 func initLogger() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 }
