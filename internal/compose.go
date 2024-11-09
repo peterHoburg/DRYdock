@@ -120,7 +120,7 @@ func SetNetwork(combinedCompose *types.Project, networkName string) (*types.Proj
 	return combinedCompose, nil
 }
 
-func SetEnvironmentFile(combinedCompose *types.Project, envFilePath string) (*types.Project, error) {
+func SetEnvFile(combinedCompose *types.Project, envFilePath string) (*types.Project, error) {
 	for serviceName, service := range combinedCompose.Services {
 		service.EnvFiles = []types.EnvFile{
 			{

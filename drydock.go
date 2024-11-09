@@ -18,9 +18,14 @@ func initLogger() {
 }
 func main() {
 	initLogger()
-	newDockerComposeName := fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix())
 	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
 	networkName := fmt.Sprintf("network-%d", time.Now().Unix())
+	envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
+
+	newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	dockerComposeRegex, err := regexp.Compile("docker-compose\\.y(?:a)?ml")
 	if err != nil {
@@ -36,6 +41,10 @@ func main() {
 		log.Fatal(err)
 	}
 	rootComposeFile, err := internal.LoadComposeFile(rootComposePath, projectName)
+	if err != nil {
+		log.Println(rootComposePath)
+		log.Fatal(err)
+	}
 
 	childComposeFiles := make([]*types.Project, 0)
 	for _, composeFilePath := range childComposeFilePaths {
@@ -59,16 +68,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// TODO generate the file path based on env that is being run
-	combinedComposeFile, err = internal.SetEnvironmentFile(combinedComposeFile, "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars")
+	combinedComposeFile, err = internal.SetEnvFile(combinedComposeFile, envFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	newDockerComposePath, err := filepath.Abs(newDockerComposeName)
-	if err != nil {
-		log.Fatal(err)
-	}
 	combinedComposeFileYaml, err := combinedComposeFile.MarshalYAML()
 	if err != nil {
 		log.Fatal(err)
