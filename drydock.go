@@ -1,48 +1,52 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/types"
 
 	"drydock/internal"
 )
 
-// TODO
-// Generate a specific name for the docker-compose file
-// add custom network,
-// change the name of the project name:
 func initLogger() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 }
 func main() {
 	initLogger()
+	newDockerComposeName := fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix())
+	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
+	networkName := fmt.Sprintf("network-%d", time.Now().Unix())
 
-	composeFilePaths, e := internal.FindFiles("docker-compose\\.y(?:a)?ml")
-	if e != nil {
-		log.Fatal(e)
+	dockerComposeRegex, err := regexp.Compile("docker-compose\\.y(?:a)?ml")
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	composeFiles := make([]*types.Project, 0)
-	for _, composeFilePath := range composeFilePaths { // We are assuming the "combined" docker compose file will be first in the list of docker file paths. This might be a mistake...
-		composeFile, err := internal.LoadComposeFile(composeFilePath)
-		if err != nil {
-			log.Fatal(err)
-		}
+	childComposeFilePaths, err := internal.FindFilesInChildDirs(dockerComposeRegex)
+	if err != nil {
+		log.Fatal(err)
+	}
+	rootComposePath, err := internal.FindFileInCurrentDir(dockerComposeRegex)
+	if err != nil {
+		log.Fatal(err)
+	}
+	rootComposeFile, err := internal.LoadComposeFile(rootComposePath, projectName)
 
-		err = internal.CheckComposeFile(composeFile)
+	childComposeFiles := make([]*types.Project, 0)
+	for _, composeFilePath := range childComposeFilePaths {
+		composeFile, err := internal.LoadComposeFile(composeFilePath, projectName)
 		if err != nil {
 			log.Println(composeFilePath)
 			log.Fatal(err)
 		}
-		composeFiles = append(composeFiles, composeFile)
+		childComposeFiles = append(childComposeFiles, composeFile)
 	}
-	// TODO this will break if composeFiles len < 2
-	childComposeFiles := composeFiles[1:]
-	combinedComposeFile := composeFiles[0]
-	combinedComposeFile, err := internal.SetCombinedDepends(childComposeFiles, combinedComposeFile)
+	combinedComposeFile, err := internal.SetCombinedDepends(childComposeFiles, rootComposeFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,7 +54,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	combinedComposeFile, err = internal.SetNetwork(combinedComposeFile)
+	combinedComposeFile, err = internal.SetNetwork(combinedComposeFile, networkName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,7 +65,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	newDockerComposePath, err := filepath.Abs("./docker-compose-new.yml")
+	newDockerComposePath, err := filepath.Abs(newDockerComposeName)
 	if err != nil {
 		log.Fatal(err)
 	}

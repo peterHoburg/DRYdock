@@ -9,8 +9,7 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 )
 
-func LoadComposeFile(composePath string) (*types.Project, error) {
-	projectName := "my_project"
+func LoadComposeFile(composePath string, projectName string) (*types.Project, error) {
 	ctx := context.Background()
 
 	options, err := cli.NewProjectOptions(
@@ -27,11 +26,10 @@ func LoadComposeFile(composePath string) (*types.Project, error) {
 		return nil, err
 	}
 
-	//// Use the MarshalYAML method to get YAML representation
-	//projectYAML, err := project.MarshalYAML()
-	//if err != nil {
-	//	return nil, err
-	//}
+	err = CheckComposeFile(project)
+	if err != nil {
+		return nil, err
+	}
 
 	return project, nil
 
@@ -43,7 +41,7 @@ func WriteComposeFile(composePath string, data []byte) error {
 		return err
 	}
 	if _, err := f.Write(data); err != nil {
-		f.Close() // ignore error; Write error takes precedence
+		_ = f.Close() // ignore error; Write error takes precedence
 		return err
 	}
 	if err := f.Close(); err != nil {
@@ -107,11 +105,10 @@ func CheckComposeFile(composeFile *types.Project) error {
 	return nil
 }
 
-func SetNetwork(combinedCompose *types.Project) (*types.Project, error) {
+func SetNetwork(combinedCompose *types.Project, networkName string) (*types.Project, error) {
 	if combinedCompose.Networks == nil {
 		combinedCompose.Networks = map[string]types.NetworkConfig{}
 	}
-	networkName := "generate-network-name" // TODO generate this
 	delete(combinedCompose.Networks, "default")
 	combinedCompose.Networks[networkName] = types.NetworkConfig{
 		Driver: "bridge",

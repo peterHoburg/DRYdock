@@ -1,23 +1,23 @@
 package internal
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"regexp"
 )
 
-func FindFiles(regex string) ([]string, error) {
+func FindFilesInChildDirs(regex *regexp.Regexp) ([]string, error) {
 	filePaths := make([]string, 0)
-	libRegEx, e := regexp.Compile(regex)
-	if e != nil {
-		return filePaths, e
-	}
 
-	e = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+	e := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if filepath.Dir(path) == "." {
+			return nil
+		}
 		if err != nil {
 			return err
 		}
-		if err == nil && libRegEx.MatchString(info.Name()) {
+		if err == nil && regex.MatchString(info.Name()) {
 			filePaths = append(filePaths, path)
 		}
 		return nil
@@ -27,4 +27,18 @@ func FindFiles(regex string) ([]string, error) {
 	}
 	return filePaths, nil
 
+}
+
+func FindFileInCurrentDir(regex *regexp.Regexp) (string, error) {
+	entries, err := os.ReadDir("./")
+	if err != nil {
+		return "", err
+	}
+
+	for _, entry := range entries {
+		if regex.MatchString(entry.Name()) {
+			return entry.Name(), nil
+		}
+	}
+	return "", errors.New("no file found")
 }
