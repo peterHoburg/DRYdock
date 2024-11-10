@@ -41,7 +41,7 @@ func Start() {
 	})
 	e.POST("/count", func(c echo.Context) error {
 		count.Count++
-		return c.Render(http.StatusOK, "index", count)
+		return c.Render(http.StatusOK, "count", count)
 	})
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
