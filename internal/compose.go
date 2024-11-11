@@ -3,7 +3,9 @@ package internal
 import (
 	"context"
 	"errors"
+	"log"
 	"os"
+	"regexp"
 
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
@@ -138,4 +140,39 @@ func SetEnvFile(combinedCompose *types.Project, envFilePath string) *types.Proje
 		combinedCompose.Services[serviceName] = service
 	}
 	return combinedCompose
+}
+
+func GetAllComposeFiles(projectName string) (*types.Project, []*types.Project, error) {
+	dockerComposeRegex, err := regexp.Compile("docker-compose\\.y(?:a)?ml")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	childComposeFilePaths, err := FindFilesInChildDirs(dockerComposeRegex)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rootComposePath, err := FindFileInCurrentDir(dockerComposeRegex)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rootComposeFile, err := LoadComposeFile(rootComposePath, projectName)
+	if err != nil {
+		log.Println(rootComposePath)
+		return nil, nil, err
+	}
+
+	childComposeFiles := make([]*types.Project, 0)
+	for _, composeFilePath := range childComposeFilePaths {
+		composeFile, err := LoadComposeFile(composeFilePath, projectName)
+		if err != nil {
+			log.Println(composeFilePath)
+			return nil, nil, err
+		}
+		childComposeFiles = append(childComposeFiles, composeFile)
+	}
+
+	return rootComposeFile, childComposeFiles, nil
 }

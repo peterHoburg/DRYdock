@@ -5,10 +5,7 @@ import (
 	"log"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"time"
-
-	"github.com/compose-spec/compose-go/v2/types"
 
 	"drydock/api"
 	"drydock/internal"
@@ -35,35 +32,9 @@ func mainCli() {
 		log.Fatal(err)
 	}
 
-	dockerComposeRegex, err := regexp.Compile("docker-compose\\.y(?:a)?ml")
+	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles(projectName)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	childComposeFilePaths, err := internal.FindFilesInChildDirs(dockerComposeRegex)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	rootComposePath, err := internal.FindFileInCurrentDir(dockerComposeRegex)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	rootComposeFile, err := internal.LoadComposeFile(rootComposePath, projectName)
-	if err != nil {
-		log.Println(rootComposePath)
-		log.Fatal(err)
-	}
-
-	childComposeFiles := make([]*types.Project, 0)
-	for _, composeFilePath := range childComposeFilePaths {
-		composeFile, err := internal.LoadComposeFile(composeFilePath, projectName)
-		if err != nil {
-			log.Println(composeFilePath)
-			log.Fatal(err)
-		}
-		childComposeFiles = append(childComposeFiles, composeFile)
 	}
 	combinedComposeFile := internal.SetCombinedDepends(childComposeFiles, rootComposeFile)
 	combinedComposeFile = internal.CombineComposeFiles(childComposeFiles, combinedComposeFile)

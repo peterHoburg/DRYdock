@@ -10,14 +10,36 @@
   </head>
 
   <body>
-      <div id="count">
-        {{ template "count" . }}
-      </div>
-      <button hx-target="#count" hx-post="/count">Count</button>
+     {{ template "containerForm" }}
   </body>
 </html>
 {{ end }}
 
-{{ block "count" . }}
-  Count {{ .Count }}
+
+
+{{ block "containerForm" . }}
+<form id="checked-containers"
+      hx-post="/containers/run"
+      hx-get="/containers/get"
+      hx-swap="outerHTML settle:3s"
+      hx-target="#toast">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Path</th>
+        <th>Active</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr>
+        <td>Joe Smith</td>
+        <td>joe@smith.org</td>
+        <td><input type="checkbox" name="active:joe@smith.org"></td>
+      </tr>
+    </tbody>
+  </table>
+  <input type="submit" value="Run" class="btn primary">
+  <span id="toast"></span>
+</form>
 {{ end }}

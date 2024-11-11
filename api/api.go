@@ -7,6 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
+	composeApi "drydock/api/docker/compose"
 )
 
 type Templates struct {
@@ -39,10 +41,8 @@ func Start() {
 	e.GET("/", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "index", count)
 	})
-	e.POST("/count", func(c echo.Context) error {
-		count.Count++
-		return c.Render(http.StatusOK, "count", count)
-	})
+
+	e.GET("/compose", composeApi.Get)
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
 }
