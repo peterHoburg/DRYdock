@@ -148,31 +148,43 @@ func GetAllComposeFiles(projectName string) (*types.Project, []*types.Project, e
 		return nil, nil, err
 	}
 
-	childComposeFilePaths, err := FindFilesInChildDirs(dockerComposeRegex)
+	childComposeFilePaths, err := FindFilesRecursively(dockerComposeRegex)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rootComposePath, err := FindFileInCurrentDir(dockerComposeRegex)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	rootComposeFile, err := LoadComposeFile(rootComposePath, projectName)
-	if err != nil {
-		log.Println(rootComposePath)
-		return nil, nil, err
-	}
-
-	childComposeFiles := make([]*types.Project, 0)
+	composeFiles := make([]*types.Project, 0)
 	for _, composeFilePath := range childComposeFilePaths {
 		composeFile, err := LoadComposeFile(composeFilePath, projectName)
 		if err != nil {
 			log.Println(composeFilePath)
 			return nil, nil, err
 		}
-		childComposeFiles = append(childComposeFiles, composeFile)
+		composeFiles = append(composeFiles, composeFile)
+	}
+	rootComposeFile, childComposeFiles, err := PickRootComposeFile(composeFiles)
+	if err != nil {
+		return nil, nil, err
+	}
+	return rootComposeFile, childComposeFiles, nil
+}
+
+func PickRootComposeFile(composeFiles []*types.Project) (*types.Project, []*types.Project, error) {
+	var rootCompose *types.Project
+	for i, composeFile := range composeFiles {
+		for _, service := range composeFile.Services {
+			if service.Name == "combined" {
+				if rootCompose != nil {
+					return nil, nil, errors.New("multiple root compose files found, root compose needs a service called combined")
+				}
+				rootCompose = composeFile
+				composeFiles = append(composeFiles[:i], composeFiles[i+1:]...)
+			}
+		}
 	}
 
-	return rootComposeFile, childComposeFiles, nil
+	if rootCompose == nil {
+		return nil, nil, errors.New("no root compose file found, root compose needs a service called combined")
+	}
+	return rootCompose, composeFiles, nil
 }
