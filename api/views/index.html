@@ -10,10 +10,6 @@
   </head>
 
   <body>
-  <select name="environment">
-    <option value="staging">Staging</option>
-    <option value="production">Production</option>
-  </select>
      {{ template "containerForm" }}
   </body>
 </html>
@@ -22,15 +18,18 @@
 
 
 {{ block "containerForm" . }}
-<form id="checked-containers"
-      hx-get="/compose" hx-trigger="load" hx-target="#tbody"
->
+<form id="checked-containers" hx-get="/compose" hx-trigger="load" hx-target="#tbody">
+  <label for="defaultEnvironmentSelect">Default Environment:</label>
+  <select name="defaultEnvironmentSelect">
+    <option value="staging">Staging</option>
+    <option value="production">Production</option>
+  </select>
   <table>
     <thead>
       <tr>
         <th>Name</th>
         <th>Path</th>
-        <th>Environment</th>
+        <th>Environment Override</th>
         <th>Active</th>
       </tr>
     </thead>
@@ -49,16 +48,16 @@
     <td> {{$val.Name}}</td>
     <td> {{$val.Path}}</td>
     <td>
-      <select name="{{$val.Path}}">
+      <select name="{{$val.Path}}" title="This overwrites the Default Environment set at the top of the page.">
         <option value="default">Default</option>
         <option value="staging">Staging</option>
         <option value="production">Production</option>
       </select>
+        </span>
     </td>
     <td>
       <input type="checkbox" name="{{$val.Path}}">
     </td>
-
   </tr>
   {{ end }}
 {{ end }}

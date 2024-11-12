@@ -17,6 +17,12 @@ type Compose struct {
 	Active bool
 }
 
+type ComposeRun struct {
+	Path        string
+	Active      bool
+	Environment string
+}
+
 func Get(c echo.Context) error {
 	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
 	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles(projectName)
@@ -32,17 +38,37 @@ func Get(c echo.Context) error {
 }
 
 func Run(c echo.Context) error {
+	var defaultEnvironmentSelect string
+	var composeFiles []ComposeRun
+
 	form, err := c.FormParams()
 	if err != nil {
 		return err
 	}
+	var environment string
 
-	var composeFiles []string
 	// TODO add env type to each(?) row.
 	for k, v := range form {
-		if v[0] == "on" {
-			composeFiles = append(composeFiles, k)
+		if k == "defaultEnvironmentSelect" {
+			defaultEnvironmentSelect = v[0]
+			continue
 		}
 	}
+
+	for k, v := range form {
+		if len(v) > 1 && v[1] == "on" {
+			if v[0] == "default" {
+				environment = defaultEnvironmentSelect
+			} else {
+				environment = v[0]
+			}
+			composeFiles = append(composeFiles, ComposeRun{
+				Path:        k,
+				Active:      true,
+				Environment: environment,
+			})
+		}
+	}
+	print(defaultEnvironmentSelect)
 	return nil
 }
