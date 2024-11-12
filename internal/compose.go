@@ -19,7 +19,7 @@ func LoadComposeFile(composePath string, projectName string) (*types.Project, er
 	options, err := cli.NewProjectOptions(
 		[]string{composePath},
 		cli.WithoutEnvironmentResolution,
-		cli.WithName(projectName),
+		//cli.WithName(projectName),
 	)
 	if err != nil {
 		return nil, err

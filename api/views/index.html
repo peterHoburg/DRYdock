@@ -19,11 +19,8 @@
 
 {{ block "containerForm" . }}
 <form id="checked-containers"
-      hx-post="/containers/run"
-      hx-get="/compose"
-      hx-trigger="load"
-      hx-swap="outerHTML"
-      hx-target="#tbody">
+      hx-get="/compose" hx-trigger="load" hx-target="#tbody"
+>
   <table>
     <thead>
       <tr>
@@ -36,9 +33,9 @@
       {{ template "containerRows" }}
     </tbody>
   </table>
-  <input type="submit" value="Run" class="btn primary">
-  <span id="toast"></span>
 </form>
+<button hx-include="#checked-containers" hx-post="/compose/run" hx-target="#running_result">Run</button>
+<div id="running_result"></div>
 {{ end }}
 
 {{ block "containerRows" . }}
@@ -46,7 +43,7 @@
   <tr>
     <td> {{$val.Name}}</td>
     <td> {{$val.Path}}</td>
-    <td><input type="checkbox" name="active:{{$val.Name}}"></td>
+    <td><input type="checkbox" name="{{$val.Path}}"></td>
   </tr>
   {{ end }}
 {{ end }}

@@ -43,6 +43,7 @@ func Start() {
 	})
 
 	e.GET("/compose", composeApi.Get)
+	e.POST("/compose/run", composeApi.Run)
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
 }

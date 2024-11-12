@@ -30,3 +30,18 @@ func Get(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, "containerRows", composeFiles)
 }
+
+func Run(c echo.Context) error {
+	form, err := c.FormParams()
+	if err != nil {
+		return err
+	}
+
+	var composeFiles []string
+	for k, v := range form {
+		if v[0] == "on" {
+			composeFiles = append(composeFiles, k)
+		}
+	}
+	return nil
+}
