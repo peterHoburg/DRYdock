@@ -24,9 +24,9 @@ func Get(c echo.Context) error {
 		log.Fatal(err)
 	}
 	var composeFiles []Compose
-	composeFiles = append(composeFiles, Compose{Name: rootComposeFile.Name, Path: rootComposeFile.Name, Active: false})
+	composeFiles = append(composeFiles, Compose{Name: "Root", Path: rootComposeFile.WorkingDir, Active: false})
 	for _, composeFile := range childComposeFiles {
-		composeFiles = append(composeFiles, Compose{Name: composeFile.Name, Path: composeFile.Name, Active: false})
+		composeFiles = append(composeFiles, Compose{Name: composeFile.Name, Path: composeFile.WorkingDir, Active: false})
 	}
-	return c.Render(http.StatusOK, "compose", map[string]interface{}{})
+	return c.Render(http.StatusOK, "containerRows", composeFiles)
 }
