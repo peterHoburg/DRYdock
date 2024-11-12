@@ -10,6 +10,10 @@
   </head>
 
   <body>
+  <select name="environment">
+    <option value="staging">Staging</option>
+    <option value="production">Production</option>
+  </select>
      {{ template "containerForm" }}
   </body>
 </html>
@@ -26,6 +30,7 @@
       <tr>
         <th>Name</th>
         <th>Path</th>
+        <th>Environment</th>
         <th>Active</th>
       </tr>
     </thead>
@@ -43,7 +48,17 @@
   <tr>
     <td> {{$val.Name}}</td>
     <td> {{$val.Path}}</td>
-    <td><input type="checkbox" name="{{$val.Path}}"></td>
+    <td>
+      <select name="{{$val.Path}}">
+        <option value="default">Default</option>
+        <option value="staging">Staging</option>
+        <option value="production">Production</option>
+      </select>
+    </td>
+    <td>
+      <input type="checkbox" name="{{$val.Path}}">
+    </td>
+
   </tr>
   {{ end }}
 {{ end }}

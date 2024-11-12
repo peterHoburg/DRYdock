@@ -38,6 +38,7 @@ func Run(c echo.Context) error {
 	}
 
 	var composeFiles []string
+	// TODO add env type to each(?) row.
 	for k, v := range form {
 		if v[0] == "on" {
 			composeFiles = append(composeFiles, k)
