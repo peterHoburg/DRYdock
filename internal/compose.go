@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
@@ -74,14 +77,14 @@ func WriteComposeFile(composePath string, data []byte) error {
 }
 
 // GenerateComposeCommand creates a Docker Compose command using the specified compose file path with '-f'.
-func GenerateComposeCommand(compose Compose) []string {
+func GenerateComposeCommand(compose *Compose) []string {
 	composeCommand := []string{"compose", "-f", compose.Path, "up", "--build", "-d"}
 	return composeCommand
 }
 
 // CombineComposeFiles merges multiple Docker Compose project files into a single project file.
 // It iterates over each service in the provided compose files and adds them to the combined compose file.
-func CombineComposeFiles(composeFiles []*Compose, combinedComposeFile Compose) Compose {
+func CombineComposeFiles(composeFiles []*Compose, combinedComposeFile *Compose) *Compose {
 	for _, c := range composeFiles {
 		for k, v := range c.Project.Services {
 			combinedComposeFile.Project.Services[k] = v
@@ -159,8 +162,12 @@ func SetEnvFile(combinedCompose *Compose, envFilePath string) *Compose {
 	}
 	return combinedCompose
 }
+func SetProjectName(compose *Compose, projectName string) *Compose {
+	compose.Project.Name = projectName
+	return compose
+}
 
-func GetAllComposeFiles(projectName string) (*Compose, []*Compose, error) {
+func GetAllComposeFiles() (*Compose, []*Compose, error) {
 	dockerComposeRegex, err := regexp.Compile("docker-compose\\.y(?:a)?ml")
 	if err != nil {
 		return nil, nil, err
@@ -217,4 +224,46 @@ func PickRootComposeFile(composeFiles []*Compose) (*Compose, []*Compose, error) 
 		return nil, nil, errors.New("no root compose file found, root compose needs a service called combined")
 	}
 	return rootCompose, composeFiles, nil
+}
+
+func RunComposeFiles(composeFiles []*Compose) error {
+	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
+	networkName := fmt.Sprintf("network-%d", time.Now().Unix())
+	envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
+
+	newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeFiles)
+	if err != nil {
+		log.Fatal(err)
+	}
+	combinedComposeFile := SetCombinedDepends(childComposeFiles, rootComposeFile)
+	combinedComposeFile = CombineComposeFiles(childComposeFiles, combinedComposeFile)
+	combinedComposeFile = SetNetwork(combinedComposeFile, networkName)
+	combinedComposeFile = SetEnvFile(combinedComposeFile, envFilePath)
+	combinedComposeFile = SetProjectName(combinedComposeFile, projectName)
+	combinedComposeFile.Path = newDockerComposePath
+
+	combinedComposeFileYaml, err := combinedComposeFile.Project.MarshalYAML()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = WriteComposeFile(newDockerComposePath, combinedComposeFileYaml)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	composeCommand := GenerateComposeCommand(combinedComposeFile)
+	cmd := exec.Command("docker", composeCommand...)
+	output, err := cmd.CombinedOutput()
+	println(string(output))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	return nil
 }

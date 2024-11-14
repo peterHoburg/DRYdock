@@ -1,10 +1,8 @@
 package composeApi
 
 import (
-	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 
@@ -24,8 +22,7 @@ type ComposeRun struct {
 }
 
 func Get(c echo.Context) error {
-	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
-	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles(projectName)
+	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,9 +66,10 @@ func Run(c echo.Context) error {
 			})
 		}
 	}
-	rootComposeFile, childComposeFiles, err := internal.LoadAndOrganizeComposeFiles(composeFiles)
-	println(rootComposeFile)
-	println(childComposeFiles)
+	err = internal.RunComposeFiles(composeFiles)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }
