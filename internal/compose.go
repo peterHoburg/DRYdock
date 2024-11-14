@@ -11,9 +11,22 @@ import (
 	"github.com/compose-spec/compose-go/v2/types"
 )
 
+type Compose struct {
+	Name          string
+	Path          string
+	Active        *bool
+	Environment   *string
+	IsRootCompose *bool
+	Project       *types.Project
+}
+
+func Pointer[T any](d T) *T {
+	return &d
+}
+
 // LoadComposeFile loads the docker-compose file into github.com/compose-spec/compose-go/v2/types.Project object.
 // Also checks the compose files for basic correctness.
-func LoadComposeFile(composePath string, projectName string) (*types.Project, error) {
+func LoadComposeFile(composePath string) (*Compose, error) {
 	ctx := context.Background()
 
 	options, err := cli.NewProjectOptions(
@@ -29,13 +42,19 @@ func LoadComposeFile(composePath string, projectName string) (*types.Project, er
 	if err != nil {
 		return nil, err
 	}
-
-	err = CheckComposeFile(project)
+	compose := &Compose{
+		Name:        project.Name,
+		Path:        composePath,
+		Active:      nil,
+		Environment: nil,
+		Project:     project,
+	}
+	err = CheckComposeFile(compose)
 	if err != nil {
 		return nil, err
 	}
 
-	return project, nil
+	return compose, nil
 
 }
 
@@ -56,23 +75,23 @@ func WriteComposeFile(composePath string, data []byte) error {
 }
 
 // GenerateComposeCommand creates a Docker Compose command using the specified compose file path with '-f'.
-func GenerateComposeCommand(composePath string) []string {
-	composeCommand := []string{"compose", "-f", composePath, "up", "--build", "-d"}
+func GenerateComposeCommand(compose Compose) []string {
+	composeCommand := []string{"compose", "-f", compose.Path, "up", "--build", "-d"}
 	return composeCommand
 }
 
 // CombineComposeFiles merges multiple Docker Compose project files into a single project file.
 // It iterates over each service in the provided compose files and adds them to the combined compose file.
-func CombineComposeFiles(composeFiles []*types.Project, combinedComposeFile *types.Project) *types.Project {
+func CombineComposeFiles(composeFiles []*Compose, combinedComposeFile Compose) Compose {
 	for _, c := range composeFiles {
-		for k, v := range c.Services {
-			combinedComposeFile.Services[k] = v
+		for k, v := range c.Project.Services {
+			combinedComposeFile.Project.Services[k] = v
 		}
 	}
 	return combinedComposeFile
 }
 
-func SetCombinedDepends(composeFiles []*types.Project, combinedCompose *types.Project) *types.Project {
+func SetCombinedDepends(composeFiles []*Compose, combinedCompose *Compose) *Compose {
 	service := types.ServiceConfig{
 		Name:        "combined",
 		Build:       nil,
@@ -85,23 +104,23 @@ func SetCombinedDepends(composeFiles []*types.Project, combinedCompose *types.Pr
 	}
 
 	if combinedCompose != nil {
-		service = combinedCompose.Services["combined"]
+		service = combinedCompose.Project.Services["combined"]
 	}
 
 	dependsOn := map[string]types.ServiceDependency{}
 	for _, composeFile := range composeFiles {
-		for _, service := range composeFile.Services {
+		for _, service := range composeFile.Project.Services {
 			dependsOn[service.Name] = types.ServiceDependency{Required: true, Condition: "service_started"}
 
 		}
 	}
 	service.DependsOn = dependsOn
-	combinedCompose.Services["combined"] = service
+	combinedCompose.Project.Services["combined"] = service
 	return combinedCompose
 }
 
-func CheckComposeFile(composeFile *types.Project) error {
-	for _, service := range composeFile.Services {
+func CheckComposeFile(composeFile *Compose) error {
+	for _, service := range composeFile.Project.Services {
 		build := service.Build
 		if build == nil {
 			return nil
@@ -113,23 +132,23 @@ func CheckComposeFile(composeFile *types.Project) error {
 	return nil
 }
 
-func SetNetwork(combinedCompose *types.Project, networkName string) *types.Project {
-	if combinedCompose.Networks == nil {
-		combinedCompose.Networks = map[string]types.NetworkConfig{}
+func SetNetwork(combinedCompose *Compose, networkName string) *Compose {
+	if combinedCompose.Project.Networks == nil {
+		combinedCompose.Project.Networks = map[string]types.NetworkConfig{}
 	}
-	delete(combinedCompose.Networks, "default")
-	combinedCompose.Networks[networkName] = types.NetworkConfig{
+	delete(combinedCompose.Project.Networks, "default")
+	combinedCompose.Project.Networks[networkName] = types.NetworkConfig{
 		Driver: "bridge",
 	}
-	for _, service := range combinedCompose.Services {
+	for _, service := range combinedCompose.Project.Services {
 		delete(service.Networks, "default")
 		service.Networks[networkName] = &types.ServiceNetworkConfig{}
 	}
 	return combinedCompose
 }
 
-func SetEnvFile(combinedCompose *types.Project, envFilePath string) *types.Project {
-	for serviceName, service := range combinedCompose.Services {
+func SetEnvFile(combinedCompose *Compose, envFilePath string) *Compose {
+	for serviceName, service := range combinedCompose.Project.Services {
 		service.EnvFiles = []types.EnvFile{
 			{
 				Path:     envFilePath,
@@ -137,25 +156,30 @@ func SetEnvFile(combinedCompose *types.Project, envFilePath string) *types.Proje
 				Format:   "",
 			},
 		}
-		combinedCompose.Services[serviceName] = service
+		combinedCompose.Project.Services[serviceName] = service
 	}
 	return combinedCompose
 }
 
-func GetAllComposeFiles(projectName string) (*types.Project, []*types.Project, error) {
+func GetAllComposeFiles(projectName string) (*Compose, []*Compose, error) {
 	dockerComposeRegex, err := regexp.Compile("docker-compose\\.y(?:a)?ml")
 	if err != nil {
 		return nil, nil, err
 	}
 
 	childComposeFilePaths, err := FindFilesRecursively(dockerComposeRegex)
+	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(childComposeFilePaths)
+
 	if err != nil {
 		return nil, nil, err
 	}
+	return rootComposeFile, childComposeFiles, nil
+}
 
-	composeFiles := make([]*types.Project, 0)
+func LoadAndOrganizeComposeFiles(childComposeFilePaths []string) (*Compose, []*Compose, error) {
+	composeFiles := make([]*Compose, 0)
 	for _, composeFilePath := range childComposeFilePaths {
-		composeFile, err := LoadComposeFile(composeFilePath, projectName)
+		composeFile, err := LoadComposeFile(composeFilePath)
 		if err != nil {
 			log.Println(composeFilePath)
 			return nil, nil, err
@@ -163,16 +187,12 @@ func GetAllComposeFiles(projectName string) (*types.Project, []*types.Project, e
 		composeFiles = append(composeFiles, composeFile)
 	}
 	rootComposeFile, childComposeFiles, err := PickRootComposeFile(composeFiles)
-	if err != nil {
-		return nil, nil, err
-	}
-	return rootComposeFile, childComposeFiles, nil
+	return rootComposeFile, childComposeFiles, err
 }
-
-func PickRootComposeFile(composeFiles []*types.Project) (*types.Project, []*types.Project, error) {
-	var rootCompose *types.Project
+func PickRootComposeFile(composeFiles []*Compose) (*Compose, []*Compose, error) {
+	var rootCompose *Compose
 	for i, composeFile := range composeFiles {
-		for _, service := range composeFile.Services {
+		for _, service := range composeFile.Project.Services {
 			if service.Name == "combined" {
 				if rootCompose != nil {
 					return nil, nil, errors.New("multiple root compose files found, root compose needs a service called combined")

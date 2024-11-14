@@ -30,16 +30,16 @@ func Get(c echo.Context) error {
 		log.Fatal(err)
 	}
 	var composeFiles []Compose
-	composeFiles = append(composeFiles, Compose{Name: "Root", Path: rootComposeFile.WorkingDir, Active: false})
+	composeFiles = append(composeFiles, Compose{Name: "Root", Path: rootComposeFile.Project.WorkingDir, Active: false})
 	for _, composeFile := range childComposeFiles {
-		composeFiles = append(composeFiles, Compose{Name: composeFile.Name, Path: composeFile.WorkingDir, Active: false})
+		composeFiles = append(composeFiles, Compose{Name: composeFile.Name, Path: composeFile.Project.WorkingDir, Active: false})
 	}
 	return c.Render(http.StatusOK, "containerRows", composeFiles)
 }
 
 func Run(c echo.Context) error {
 	var defaultEnvironmentSelect string
-	var composeFiles []ComposeRun
+	var composeRun []internal.Compose
 
 	form, err := c.FormParams()
 	if err != nil {
@@ -47,7 +47,6 @@ func Run(c echo.Context) error {
 	}
 	var environment string
 
-	// TODO add env type to each(?) row.
 	for k, v := range form {
 		if k == "defaultEnvironmentSelect" {
 			defaultEnvironmentSelect = v[0]
@@ -62,13 +61,23 @@ func Run(c echo.Context) error {
 			} else {
 				environment = v[0]
 			}
-			composeFiles = append(composeFiles, ComposeRun{
-				Path:        k,
-				Active:      true,
-				Environment: environment,
+			composeRun = append(composeRun, internal.Compose{
+				Path:        k + "/docker-compose.yml",
+				Active:      internal.Pointer(true),
+				Environment: &environment,
 			})
 		}
 	}
-	print(defaultEnvironmentSelect)
+	//rootComposeFile, childComposeFiles, err := internal.LoadAndOrganizeComposeFiles(childComposeFilePaths, projectName)
+	//
+	//var composeFiles []*types.Project
+	//for _, compose := range composeRun {
+	//	composeFile, err := internal.LoadComposeFile(compose.Path, "project")
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	composeFiles = append(composeFiles, composeFile)
+	//}
+
 	return nil
 }
