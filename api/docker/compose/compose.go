@@ -58,6 +58,6 @@ func Run(c echo.Context) error {
 	if err != nil {
 		log.Println(err)
 	}
-
+	// TODO also return the docker logs command
 	return c.Render(http.StatusOK, "run", string(output))
 }
