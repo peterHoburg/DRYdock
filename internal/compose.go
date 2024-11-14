@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -20,19 +21,21 @@ type Compose struct {
 	Project       *types.Project
 }
 
+func (c Compose) String() string {
+	return fmt.Sprintf("Name: %s, Path: %s, Active: %t, Environment: %s, IsRootCompose: %t", c.Name, c.Path, *c.Active, *c.Environment, *c.IsRootCompose)
+}
 func Pointer[T any](d T) *T {
 	return &d
 }
 
 // LoadComposeFile loads the docker-compose file into github.com/compose-spec/compose-go/v2/types.Project object.
 // Also checks the compose files for basic correctness.
-func LoadComposeFile(composePath string) (*Compose, error) {
+func LoadComposeFile(compose *Compose) (*Compose, error) {
 	ctx := context.Background()
 
 	options, err := cli.NewProjectOptions(
-		[]string{composePath},
+		[]string{compose.Path},
 		cli.WithoutEnvironmentResolution,
-		//cli.WithName(projectName),
 	)
 	if err != nil {
 		return nil, err
@@ -42,13 +45,9 @@ func LoadComposeFile(composePath string) (*Compose, error) {
 	if err != nil {
 		return nil, err
 	}
-	compose := &Compose{
-		Name:        project.Name,
-		Path:        composePath,
-		Active:      nil,
-		Environment: nil,
-		Project:     project,
-	}
+	compose.Project = project
+	compose.Name = project.Name
+
 	err = CheckComposeFile(compose)
 	if err != nil {
 		return nil, err
@@ -168,7 +167,18 @@ func GetAllComposeFiles(projectName string) (*Compose, []*Compose, error) {
 	}
 
 	childComposeFilePaths, err := FindFilesRecursively(dockerComposeRegex)
-	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(childComposeFilePaths)
+	composeFiles := make([]*Compose, 0)
+	for _, path := range childComposeFilePaths {
+		composeFiles = append(composeFiles, &Compose{
+			Name:          "",
+			Path:          path,
+			Active:        nil,
+			Environment:   nil,
+			IsRootCompose: nil,
+			Project:       nil,
+		})
+	}
+	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeFiles)
 
 	if err != nil {
 		return nil, nil, err
@@ -176,17 +186,17 @@ func GetAllComposeFiles(projectName string) (*Compose, []*Compose, error) {
 	return rootComposeFile, childComposeFiles, nil
 }
 
-func LoadAndOrganizeComposeFiles(childComposeFilePaths []string) (*Compose, []*Compose, error) {
-	composeFiles := make([]*Compose, 0)
-	for _, composeFilePath := range childComposeFilePaths {
-		composeFile, err := LoadComposeFile(composeFilePath)
+func LoadAndOrganizeComposeFiles(composeFiles []*Compose) (*Compose, []*Compose, error) {
+	updatedComposeFiles := make([]*Compose, 0)
+	for _, compose := range composeFiles {
+		composeFile, err := LoadComposeFile(compose)
 		if err != nil {
-			log.Println(composeFilePath)
+			log.Println(compose)
 			return nil, nil, err
 		}
-		composeFiles = append(composeFiles, composeFile)
+		updatedComposeFiles = append(updatedComposeFiles, composeFile)
 	}
-	rootComposeFile, childComposeFiles, err := PickRootComposeFile(composeFiles)
+	rootComposeFile, childComposeFiles, err := PickRootComposeFile(updatedComposeFiles)
 	return rootComposeFile, childComposeFiles, err
 }
 func PickRootComposeFile(composeFiles []*Compose) (*Compose, []*Compose, error) {

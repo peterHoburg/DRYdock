@@ -39,7 +39,7 @@ func Get(c echo.Context) error {
 
 func Run(c echo.Context) error {
 	var defaultEnvironmentSelect string
-	var composeRun []internal.Compose
+	var composeFiles []*internal.Compose
 
 	form, err := c.FormParams()
 	if err != nil {
@@ -53,7 +53,8 @@ func Run(c echo.Context) error {
 			continue
 		}
 	}
-
+	// TODO handle when nothing is active
+	// TODO Should the root file be passed to the UI?? I don't think so
 	for k, v := range form {
 		if len(v) > 1 && v[1] == "on" {
 			if v[0] == "default" {
@@ -61,23 +62,16 @@ func Run(c echo.Context) error {
 			} else {
 				environment = v[0]
 			}
-			composeRun = append(composeRun, internal.Compose{
+			composeFiles = append(composeFiles, &internal.Compose{
 				Path:        k + "/docker-compose.yml",
 				Active:      internal.Pointer(true),
 				Environment: &environment,
 			})
 		}
 	}
-	//rootComposeFile, childComposeFiles, err := internal.LoadAndOrganizeComposeFiles(childComposeFilePaths, projectName)
-	//
-	//var composeFiles []*types.Project
-	//for _, compose := range composeRun {
-	//	composeFile, err := internal.LoadComposeFile(compose.Path, "project")
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	composeFiles = append(composeFiles, composeFile)
-	//}
+	rootComposeFile, childComposeFiles, err := internal.LoadAndOrganizeComposeFiles(composeFiles)
+	println(rootComposeFile)
+	println(childComposeFiles)
 
 	return nil
 }
