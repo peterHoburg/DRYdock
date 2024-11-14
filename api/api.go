@@ -1,6 +1,7 @@
 package api
 
 import (
+	"embed"
 	"html/template"
 	"io"
 	"net/http"
@@ -11,6 +12,14 @@ import (
 	composeApi "drydock/api/docker/compose"
 )
 
+// viewsFs holds our static web server content.
+//
+//go:embed views/index.html
+var viewsFs embed.FS
+
+//go:embed static/*
+var staticFs embed.FS
+
 type Templates struct {
 	templates *template.Template
 }
@@ -20,7 +29,7 @@ func (t *Templates) Render(w io.Writer, name string, data interface{}, c echo.Co
 }
 func newTemplate() *Templates {
 	return &Templates{
-		templates: template.Must(template.ParseGlob("api/views/*.html")),
+		templates: template.Must(template.ParseFS(viewsFs, "views/*.html")),
 	}
 }
 
@@ -42,8 +51,8 @@ func Start() {
 		return c.Render(http.StatusOK, "index", count)
 	})
 
-	e.Static("/static", "api/static")
-	e.File("/favicon.ico", "api/static/favicon.png")
+	e.StaticFS("/static", staticFs)
+	e.FileFS("/favicon.ico", "favicon.ico", staticFs)
 	e.GET("/compose", composeApi.Get)
 	e.POST("/compose/run", composeApi.Run)
 	// Start server
