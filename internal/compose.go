@@ -263,7 +263,7 @@ func RunComposeFiles(composeFiles []*Compose) (*Compose, *[]byte, error) {
 	println(string(output))
 
 	if err != nil {
-		return nil, nil, err
+		return nil, &output, err
 	}
 	return combinedComposeFile, &output, nil
 }

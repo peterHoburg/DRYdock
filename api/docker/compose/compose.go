@@ -13,7 +13,7 @@ import (
 type RunReturnData struct {
 	Output     string
 	LogCommand string
-	Errors     string
+	Error      error
 }
 
 func handleErr(c echo.Context, err error) error {
@@ -70,7 +70,10 @@ func Run(c echo.Context) error {
 	}
 	combinedComposeFile, output, err := internal.RunComposeFiles(composeFiles)
 	if err != nil {
-		return handleErr(c, err)
+		if output == nil {
+			return handleErr(c, err)
+		}
+		return c.Render(http.StatusOK, "run", RunReturnData{Error: err, Output: string(*output), LogCommand: "ERROR"})
 	}
 	return c.Render(http.StatusOK, "run", RunReturnData{Output: string(*output), LogCommand: fmt.Sprintf("docker compose -f %s logs -t -f ", combinedComposeFile.Path)})
 }
