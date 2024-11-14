@@ -42,6 +42,8 @@ func Start() {
 		return c.Render(http.StatusOK, "index", count)
 	})
 
+	e.Static("/static", "api/static")
+	e.File("/favicon.ico", "api/static/favicon.png")
 	e.GET("/compose", composeApi.Get)
 	e.POST("/compose/run", composeApi.Run)
 	// Start server

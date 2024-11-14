@@ -5,8 +5,8 @@
     <title></title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://unpkg.com/htmx.org@2.0.3" integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq" crossorigin="anonymous"></script>
-    <link href="css/style.css" rel="stylesheet">
+    <script src="static/htmx.js" integrity="sha384-oecSB0HeI5gdFcssloeKf3nByrZ7XjyAKxoykSkH8A4WPwT6suR+Ie4wGSLaQJBu" crossorigin="anonymous"></script>
+    <link href="static/style.css" rel="stylesheet">
   </head>
 
   <body>
@@ -66,7 +66,9 @@
 {{ block "run" . }}
 
 <div id="running_result" style="width: 100%;">
+  Log command:
   <textarea style="width: 100%; height: 100%;">{{ .LogCommand }}</textarea>
+  Run command output:
   <textarea style="width: 100%; height: 400px;">{{ .Output }}</textarea>
 </div>
 {{ end }}
