@@ -226,7 +226,7 @@ func PickRootComposeFile(composeFiles []*Compose) (*Compose, []*Compose, error) 
 	return rootCompose, composeFiles, nil
 }
 
-func RunComposeFiles(composeFiles []*Compose) ([]byte, error) {
+func RunComposeFiles(composeFiles []*Compose) (*Compose, []byte, error) {
 	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
 	networkName := fmt.Sprintf("network-%d", time.Now().Unix())
 	envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
@@ -265,5 +265,5 @@ func RunComposeFiles(composeFiles []*Compose) ([]byte, error) {
 	if err != nil {
 		log.Println(err)
 	}
-	return output, nil
+	return combinedComposeFile, output, nil
 }

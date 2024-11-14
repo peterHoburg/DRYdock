@@ -1,6 +1,7 @@
 package composeApi
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -8,6 +9,11 @@ import (
 
 	"drydock/internal"
 )
+
+type RunReturnData struct {
+	Output     string
+	LogCommand string
+}
 
 func Get(c echo.Context) error {
 	// TODO remove root from UI, But we need to find it in the run function
@@ -54,10 +60,11 @@ func Run(c echo.Context) error {
 			})
 		}
 	}
-	output, err := internal.RunComposeFiles(composeFiles)
+	combinedComposeFile, output, err := internal.RunComposeFiles(composeFiles)
 	if err != nil {
 		log.Println(err)
 	}
 	// TODO also return the docker logs command
-	return c.Render(http.StatusOK, "run", string(output))
+
+	return c.Render(http.StatusOK, "run", RunReturnData{Output: string(output), LogCommand: fmt.Sprintf("docker compose -f %s logs -t -f ", combinedComposeFile.Path)})
 }
