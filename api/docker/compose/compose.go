@@ -10,6 +10,7 @@ import (
 )
 
 func Get(c echo.Context) error {
+	// TODO remove root from UI, But we need to find it in the run function
 	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles()
 	if err != nil {
 		log.Println(err)
