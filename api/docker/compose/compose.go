@@ -13,13 +13,21 @@ import (
 type RunReturnData struct {
 	Output     string
 	LogCommand string
+	Errors     string
+}
+
+func handleErr(c echo.Context, err error) error {
+	log.Println(err)
+	c.Response().Header().Add("HX-Retarget", "#errors")
+	c.Response().Header().Add("HX-Reswap", "innerHTML")
+	return c.Render(http.StatusOK, "errors", err)
 }
 
 func Get(c echo.Context) error {
 	// TODO remove root from UI, But we need to find it in the run function
 	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles()
 	if err != nil {
-		log.Println(err)
+		return handleErr(c, err)
 	}
 	var composeFiles []internal.Compose
 	composeFiles = append(composeFiles, internal.Compose{Name: "Root", Path: rootComposeFile.Project.WorkingDir, Active: internal.Pointer(false)})
@@ -35,7 +43,7 @@ func Run(c echo.Context) error {
 
 	form, err := c.FormParams()
 	if err != nil {
-		return err
+		return handleErr(c, err)
 	}
 	var environment string
 
@@ -62,9 +70,7 @@ func Run(c echo.Context) error {
 	}
 	combinedComposeFile, output, err := internal.RunComposeFiles(composeFiles)
 	if err != nil {
-		log.Println(err)
+		return handleErr(c, err)
 	}
-	// TODO also return the docker logs command
-
-	return c.Render(http.StatusOK, "run", RunReturnData{Output: string(output), LogCommand: fmt.Sprintf("docker compose -f %s logs -t -f ", combinedComposeFile.Path)})
+	return c.Render(http.StatusOK, "run", RunReturnData{Output: string(*output), LogCommand: fmt.Sprintf("docker compose -f %s logs -t -f ", combinedComposeFile.Path)})
 }
