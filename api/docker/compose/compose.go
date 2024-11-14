@@ -9,27 +9,15 @@ import (
 	"drydock/internal"
 )
 
-type Compose struct {
-	Name   string
-	Path   string
-	Active bool
-}
-
-type ComposeRun struct {
-	Path        string
-	Active      bool
-	Environment string
-}
-
 func Get(c echo.Context) error {
 	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles()
 	if err != nil {
 		log.Fatal(err)
 	}
-	var composeFiles []Compose
-	composeFiles = append(composeFiles, Compose{Name: "Root", Path: rootComposeFile.Project.WorkingDir, Active: false})
+	var composeFiles []internal.Compose
+	composeFiles = append(composeFiles, internal.Compose{Name: "Root", Path: rootComposeFile.Project.WorkingDir, Active: internal.Pointer(false)})
 	for _, composeFile := range childComposeFiles {
-		composeFiles = append(composeFiles, Compose{Name: composeFile.Name, Path: composeFile.Project.WorkingDir, Active: false})
+		composeFiles = append(composeFiles, internal.Compose{Name: composeFile.Name, Path: composeFile.Project.WorkingDir, Active: internal.Pointer(false)})
 	}
 	return c.Render(http.StatusOK, "containerRows", composeFiles)
 }

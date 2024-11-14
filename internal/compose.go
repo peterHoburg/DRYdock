@@ -168,7 +168,7 @@ func SetProjectName(compose *Compose, projectName string) *Compose {
 }
 
 func GetAllComposeFiles() (*Compose, []*Compose, error) {
-	dockerComposeRegex, err := regexp.Compile("docker-compose\\.y(?:a)?ml")
+	dockerComposeRegex, err := regexp.Compile("docker-compose\\.ya?ml")
 	if err != nil {
 		return nil, nil, err
 	}
