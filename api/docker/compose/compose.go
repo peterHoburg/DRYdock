@@ -12,7 +12,7 @@ import (
 func Get(c echo.Context) error {
 	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	var composeFiles []internal.Compose
 	composeFiles = append(composeFiles, internal.Compose{Name: "Root", Path: rootComposeFile.Project.WorkingDir, Active: internal.Pointer(false)})
@@ -39,7 +39,6 @@ func Run(c echo.Context) error {
 		}
 	}
 	// TODO handle when nothing is active
-	// TODO Should the root file be passed to the UI?? I don't think so
 	for k, v := range form {
 		if len(v) > 1 && v[1] == "on" {
 			if v[0] == "default" {
@@ -54,10 +53,10 @@ func Run(c echo.Context) error {
 			})
 		}
 	}
-	err = internal.RunComposeFiles(composeFiles)
+	output, err := internal.RunComposeFiles(composeFiles)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
-	return nil
+	return c.Render(http.StatusOK, "run", string(output))
 }

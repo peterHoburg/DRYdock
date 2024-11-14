@@ -18,28 +18,28 @@
 
 
 {{ block "containerForm" . }}
-<form id="checked-containers" hx-get="/compose" hx-trigger="load" hx-target="#tbody">
-  <label for="defaultEnvironmentSelect">Default Environment:</label>
-  <select name="defaultEnvironmentSelect">
-    <option value="staging">Staging</option>
-    <option value="production">Production</option>
-  </select>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Path</th>
-        <th>Environment Override</th>
-        <th>Active</th>
-      </tr>
-    </thead>
-    <tbody id="tbody">
-      {{ template "containerRows" }}
-    </tbody>
-  </table>
-</form>
-<button hx-include="#checked-containers" hx-post="/compose/run" hx-target="#running_result">Run</button>
-<div id="running_result"></div>
+  <form id="checked-containers" hx-get="/compose" hx-trigger="load" hx-target="#tbody">
+    <label for="defaultEnvironmentSelect">Default Environment:</label>
+    <select name="defaultEnvironmentSelect">
+      <option value="staging">Staging</option>
+      <option value="production">Production</option>
+    </select>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Path</th>
+          <th>Environment Override</th>
+          <th>Active</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        {{ template "containerRows" }}
+      </tbody>
+    </table>
+  </form>
+  <button hx-include="#checked-containers" hx-post="/compose/run" hx-target="#running_result">Run</button>
+  {{ template "run" }}
 {{ end }}
 
 {{ block "containerRows" . }}
@@ -60,4 +60,13 @@
     </td>
   </tr>
   {{ end }}
+{{ end }}
+
+
+{{ block "run" . }}
+<div id="running_result" style="width: 100%;height: 400px;">
+  <textarea style="width: 100%; height: 100%;">
+    {{ . }}
+  </textarea>
+</div>
 {{ end }}

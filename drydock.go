@@ -24,12 +24,12 @@ func mainCli() {
 	//
 	//newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
 	//if err != nil {
-	//	log.Fatal(err)
+	//	log.Println(err)
 	//}
 	//
 	//rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles(projectName)
 	//if err != nil {
-	//	log.Fatal(err)
+	//	log.Println(err)
 	//}
 	//combinedComposeFile := internal.SetCombinedDepends(childComposeFiles, rootComposeFile)
 	//combinedComposeFile = internal.CombineComposeFiles(childComposeFiles, combinedComposeFile)
@@ -38,12 +38,12 @@ func mainCli() {
 	//
 	//combinedComposeFileYaml, err := combinedComposeFile.MarshalYAML()
 	//if err != nil {
-	//	log.Fatal(err)
+	//	log.Println(err)
 	//}
 	//
 	//err = internal.WriteComposeFile(newDockerComposePath, combinedComposeFileYaml)
 	//if err != nil {
-	//	log.Fatal(err)
+	//	log.Println(err)
 	//}
 	//
 	//composeCommand := internal.GenerateComposeCommand(newDockerComposePath)
@@ -52,7 +52,7 @@ func mainCli() {
 	//println(string(output))
 	//
 	//if err != nil {
-	//	log.Fatal(err)
+	//	log.Println(err)
 	//}
 
 }

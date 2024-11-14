@@ -226,19 +226,19 @@ func PickRootComposeFile(composeFiles []*Compose) (*Compose, []*Compose, error) 
 	return rootCompose, composeFiles, nil
 }
 
-func RunComposeFiles(composeFiles []*Compose) error {
+func RunComposeFiles(composeFiles []*Compose) ([]byte, error) {
 	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
 	networkName := fmt.Sprintf("network-%d", time.Now().Unix())
 	envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
 
 	newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeFiles)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	combinedComposeFile := SetCombinedDepends(childComposeFiles, rootComposeFile)
 	combinedComposeFile = CombineComposeFiles(childComposeFiles, combinedComposeFile)
@@ -249,12 +249,12 @@ func RunComposeFiles(composeFiles []*Compose) error {
 
 	combinedComposeFileYaml, err := combinedComposeFile.Project.MarshalYAML()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	err = WriteComposeFile(newDockerComposePath, combinedComposeFileYaml)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	composeCommand := GenerateComposeCommand(combinedComposeFile)
@@ -263,7 +263,7 @@ func RunComposeFiles(composeFiles []*Compose) error {
 	println(string(output))
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
-	return nil
+	return output, nil
 }
