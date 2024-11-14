@@ -55,11 +55,19 @@ func Run(c echo.Context) error {
 	}
 	// TODO handle when nothing is active
 	for k, v := range form {
-		if len(v) > 1 && v[1] == "on" {
+		if (len(v) > 1 && v[1] == "on") || k == "rootComposeFile" {
 			if v[0] == "default" {
 				environment = defaultEnvironmentSelect
 			} else {
 				environment = v[0]
+			}
+			if k == "rootComposeFile" {
+				composeFiles = append(composeFiles, &internal.Compose{
+					Path:        v[0] + "/docker-compose.yml",
+					Active:      internal.Pointer(true),
+					Environment: &environment,
+				})
+				continue
 			}
 			composeFiles = append(composeFiles, &internal.Compose{
 				Path:        k + "/docker-compose.yml",
