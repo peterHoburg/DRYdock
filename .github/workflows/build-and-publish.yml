@@ -32,9 +32,8 @@ jobs:
 
       - name: Publish binary
         uses: actions/upload-release-asset@v1
-        if: github.ref == 'refs/heads/main'
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./drydock
           asset_name: drydock
           asset_content_type: application/octet-stream
