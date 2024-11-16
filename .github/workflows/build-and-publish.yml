@@ -1,0 +1,40 @@
+name: Build, Test, and Publish
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.23'
+
+#      - name: Run tests
+#        run: go test ./...
+
+      - name: Build binary
+        run: go build -o drydock
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: drydock
+          path: drydock
+
+      - name: Publish binary
+        uses: actions/upload-release-asset@v1
+        if: github.ref == 'refs/heads/main'
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./drydock
+          asset_name: drydock
+          asset_content_type: application/octet-stream
