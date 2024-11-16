@@ -24,6 +24,8 @@
       <option value="staging">Staging</option>
       <option value="production">Production</option>
     </select>
+    {{ template "compose_run_options" }}
+
     <table>
       <thead>
         <tr>
@@ -90,4 +92,15 @@
 {{ block "errors" . }}
   <h1>Error</h1>
   <p>{{ .Error }}</p>
+{{ end }}
+
+
+{{ block "compose_run_options" . }}
+<div>
+  Remove Orphans: <input type="checkbox" name="removeOrphans">
+  <br>
+  Always recreate deps: <input type="checkbox" name="alwaysRecreateDeps">
+  <br>
+  Custom Compose Command: <textarea name="customComposeCommand"></textarea>
+</div>
 {{ end }}

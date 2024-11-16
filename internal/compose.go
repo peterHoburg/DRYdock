@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
@@ -27,6 +28,9 @@ type ComposeRunData struct {
 	NetworkName          string
 	EnvFilePath          string
 	NewDockerComposePath string
+	RemoveOrphans        bool
+	AlwaysRecreateDeps   bool
+	CustomComposeCommand string
 }
 
 type ComposeRunDataReturn struct {
@@ -87,8 +91,22 @@ func WriteComposeFile(composePath string, data []byte) error {
 }
 
 // GenerateComposeCommand creates a Docker Compose command using the specified compose file path with '-f'.
-func GenerateComposeCommand(compose *Compose) []string {
-	composeCommand := []string{"compose", "-f", compose.Path, "up", "--build", "-d"}
+func GenerateComposeCommand(compose *Compose, composeRunData ComposeRunData) []string {
+	composeCommand := []string{"compose", "-f", compose.Path}
+	if composeRunData.CustomComposeCommand != "" {
+		customComposeCommand := strings.Fields(composeRunData.CustomComposeCommand)
+		composeCommand = append(composeCommand, customComposeCommand...)
+	} else {
+		composeCommand = append(composeCommand, "up", "--build", "-d")
+	}
+
+	if composeRunData.RemoveOrphans {
+		composeCommand = append(composeCommand, "--remove-orphans")
+	}
+	if composeRunData.AlwaysRecreateDeps {
+		composeCommand = append(composeCommand, "--always-recreate-deps")
+	}
+	log.Println(composeCommand)
 	return composeCommand
 }
 
@@ -248,7 +266,7 @@ func ComposeFilesToRunCommand(composeRunData ComposeRunData) (*ComposeRunDataRet
 	combinedComposeFile = setProjectName(combinedComposeFile, composeRunData.ProjectName)
 	combinedComposeFile.Path = composeRunData.NewDockerComposePath
 
-	composeCommand := GenerateComposeCommand(combinedComposeFile)
+	composeCommand := GenerateComposeCommand(combinedComposeFile, composeRunData)
 	return &ComposeRunDataReturn{
 		ComposeFile: combinedComposeFile,
 		Command:     composeCommand,
