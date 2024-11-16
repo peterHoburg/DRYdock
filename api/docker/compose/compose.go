@@ -43,6 +43,9 @@ func Get(c echo.Context) error {
 func Run(c echo.Context) error {
 	var defaultEnvironmentSelect string
 	var composeFiles []*internal.Compose
+	removeOrphans := false
+	alwaysRecreateDeps := false
+	customComposeCommand := ""
 
 	form, err := c.FormParams()
 	if err != nil {
@@ -55,8 +58,20 @@ func Run(c echo.Context) error {
 			defaultEnvironmentSelect = v[0]
 			continue
 		}
+		if k == "removeOrphans" {
+			removeOrphans = true
+			continue
+		}
+		if k == "alwaysRecreateDeps" {
+			alwaysRecreateDeps = true
+			continue
+		}
+		if k == "customComposeCommand" {
+			customComposeCommand = v[0]
+			continue
+		}
 	}
-	// TODO handle when nothing is active
+
 	for k, v := range form {
 		if (len(v) > 1 && v[1] == "on") || k == "rootComposeFile" {
 			if v[0] == "default" {
@@ -93,6 +108,9 @@ func Run(c echo.Context) error {
 		NetworkName:          networkName,
 		EnvFilePath:          envFilePath,
 		NewDockerComposePath: newDockerComposePath,
+		RemoveOrphans:        removeOrphans,
+		AlwaysRecreateDeps:   alwaysRecreateDeps,
+		CustomComposeCommand: customComposeCommand,
 	}
 	composeRunDataReturn, err := internal.ComposeFilesToRunCommand(composeRunData)
 	if err != nil {
