@@ -6,10 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"regexp"
-	"time"
 
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
@@ -22,6 +19,19 @@ type Compose struct {
 	Environment   *string
 	IsRootCompose *bool
 	Project       *types.Project
+}
+
+type ComposeRunData struct {
+	ComposeFiles         []*Compose
+	ProjectName          string
+	NetworkName          string
+	EnvFilePath          string
+	NewDockerComposePath string
+}
+
+type ComposeRunDataReturn struct {
+	ComposeFile *Compose
+	Command     []string
 }
 
 func (c Compose) String() string {
@@ -51,7 +61,7 @@ func LoadComposeFile(compose *Compose) (*Compose, error) {
 	compose.Project = project
 	compose.Name = project.Name
 
-	err = CheckComposeFile(compose)
+	err = checkComposeFile(compose)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +103,7 @@ func CombineComposeFiles(composeFiles []*Compose, combinedComposeFile *Compose) 
 	return combinedComposeFile
 }
 
-func SetCombinedDepends(composeFiles []*Compose, combinedCompose *Compose) *Compose {
+func setCombinedDepends(composeFiles []*Compose, combinedCompose *Compose) *Compose {
 	service := types.ServiceConfig{
 		Name:        "combined",
 		Build:       nil,
@@ -121,7 +131,7 @@ func SetCombinedDepends(composeFiles []*Compose, combinedCompose *Compose) *Comp
 	return combinedCompose
 }
 
-func CheckComposeFile(composeFile *Compose) error {
+func checkComposeFile(composeFile *Compose) error {
 	for _, service := range composeFile.Project.Services {
 		build := service.Build
 		if build == nil {
@@ -134,7 +144,7 @@ func CheckComposeFile(composeFile *Compose) error {
 	return nil
 }
 
-func SetNetwork(combinedCompose *Compose, networkName string) *Compose {
+func setNetwork(combinedCompose *Compose, networkName string) *Compose {
 	if combinedCompose.Project.Networks == nil {
 		combinedCompose.Project.Networks = map[string]types.NetworkConfig{}
 	}
@@ -149,7 +159,7 @@ func SetNetwork(combinedCompose *Compose, networkName string) *Compose {
 	return combinedCompose
 }
 
-func SetEnvFile(combinedCompose *Compose, envFilePath string) *Compose {
+func setEnvFile(combinedCompose *Compose, envFilePath string) *Compose {
 	for serviceName, service := range combinedCompose.Project.Services {
 		service.EnvFiles = []types.EnvFile{
 			{
@@ -162,7 +172,7 @@ func SetEnvFile(combinedCompose *Compose, envFilePath string) *Compose {
 	}
 	return combinedCompose
 }
-func SetProjectName(compose *Compose, projectName string) *Compose {
+func setProjectName(compose *Compose, projectName string) *Compose {
 	compose.Project.Name = projectName
 	return compose
 }
@@ -226,44 +236,21 @@ func PickRootComposeFile(composeFiles []*Compose) (*Compose, []*Compose, error) 
 	return rootCompose, composeFiles, nil
 }
 
-func RunComposeFiles(composeFiles []*Compose) (*Compose, *[]byte, error) {
-	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
-	networkName := fmt.Sprintf("network-%d", time.Now().Unix())
-	envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
-
-	newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
+func ComposeFilesToRunCommand(composeRunData ComposeRunData) (*ComposeRunDataReturn, error) {
+	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeRunData.ComposeFiles)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
-
-	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeFiles)
-	if err != nil {
-		return nil, nil, err
-	}
-	combinedComposeFile := SetCombinedDepends(childComposeFiles, rootComposeFile)
+	combinedComposeFile := setCombinedDepends(childComposeFiles, rootComposeFile)
 	combinedComposeFile = CombineComposeFiles(childComposeFiles, combinedComposeFile)
-	combinedComposeFile = SetNetwork(combinedComposeFile, networkName)
-	combinedComposeFile = SetEnvFile(combinedComposeFile, envFilePath)
-	combinedComposeFile = SetProjectName(combinedComposeFile, projectName)
-	combinedComposeFile.Path = newDockerComposePath
-
-	combinedComposeFileYaml, err := combinedComposeFile.Project.MarshalYAML()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = WriteComposeFile(newDockerComposePath, combinedComposeFileYaml)
-	if err != nil {
-		return nil, nil, err
-	}
+	combinedComposeFile = setNetwork(combinedComposeFile, composeRunData.NetworkName)
+	combinedComposeFile = setEnvFile(combinedComposeFile, composeRunData.EnvFilePath)
+	combinedComposeFile = setProjectName(combinedComposeFile, composeRunData.ProjectName)
+	combinedComposeFile.Path = composeRunData.NewDockerComposePath
 
 	composeCommand := GenerateComposeCommand(combinedComposeFile)
-	cmd := exec.Command("docker", composeCommand...)
-	output, err := cmd.CombinedOutput()
-	println(string(output))
-
-	if err != nil {
-		return nil, &output, err
-	}
-	return combinedComposeFile, &output, nil
+	return &ComposeRunDataReturn{
+		ComposeFile: combinedComposeFile,
+		Command:     composeCommand,
+	}, nil
 }

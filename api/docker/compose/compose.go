@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os/exec"
+	"path/filepath"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
@@ -76,12 +79,45 @@ func Run(c echo.Context) error {
 			})
 		}
 	}
-	combinedComposeFile, output, err := internal.RunComposeFiles(composeFiles)
+	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
+	networkName := fmt.Sprintf("network-%d", time.Now().Unix())
+	envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
+	newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
+	if err != nil {
+		log.Println(err)
+	}
+
+	composeRunData := internal.ComposeRunData{
+		ComposeFiles:         composeFiles,
+		ProjectName:          projectName,
+		NetworkName:          networkName,
+		EnvFilePath:          envFilePath,
+		NewDockerComposePath: newDockerComposePath,
+	}
+	composeRunDataReturn, err := internal.ComposeFilesToRunCommand(composeRunData)
+	if err != nil {
+		return handleErr(c, err)
+	}
+
+	combinedComposeFileYaml, err := composeRunDataReturn.ComposeFile.Project.MarshalYAML()
+	if err != nil {
+		return handleErr(c, err)
+	}
+
+	err = internal.WriteComposeFile(composeRunData.NewDockerComposePath, combinedComposeFileYaml)
+	if err != nil {
+		return handleErr(c, err)
+	}
+
+	cmd := exec.Command("docker", composeRunDataReturn.Command...)
+	output, err := cmd.CombinedOutput()
+	println(string(output))
+
 	if err != nil {
 		if output == nil {
 			return handleErr(c, err)
 		}
-		return c.Render(http.StatusOK, "run", RunReturnData{Error: err, Output: string(*output), LogCommand: "ERROR"})
+		return c.Render(http.StatusOK, "run", RunReturnData{Error: err, Output: string(output), LogCommand: "ERROR"})
 	}
-	return c.Render(http.StatusOK, "run", RunReturnData{Output: string(*output), LogCommand: fmt.Sprintf("docker compose -f %s logs -t -f ", combinedComposeFile.Path)})
+	return c.Render(http.StatusOK, "run", RunReturnData{Output: string(output), LogCommand: fmt.Sprintf("docker compose -f %s logs -t -f ", composeRunDataReturn.ComposeFile.Path)})
 }
