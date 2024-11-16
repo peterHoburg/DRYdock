@@ -1,5 +1,5 @@
 # DRYdock
-
+`wget https://github.com/peterHoburg/DRYdock/releases/latest/download/drydock`
 ## Features
 * Find all docker files recursively down from the current dir
 * From n number of containers generate a compose file
