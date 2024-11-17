@@ -31,7 +31,7 @@ func Get(c echo.Context) error {
 	var composeFiles []internal.Compose
 
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
 	}
 
@@ -52,7 +52,7 @@ func Run(c echo.Context) error {
 
 	form, err := c.FormParams()
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
 	}
 
@@ -102,7 +102,7 @@ func Run(c echo.Context) error {
 	envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
 	newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
 	}
 
@@ -118,19 +118,19 @@ func Run(c echo.Context) error {
 	}
 	composeRunDataReturn, err := internal.ComposeFilesToRunCommand(composeRunData)
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
 	}
 
 	combinedComposeFileYaml, err := composeRunDataReturn.ComposeFile.Project.MarshalYAML()
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
 	}
 
 	err = internal.WriteComposeFile(composeRunData.NewDockerComposePath, combinedComposeFileYaml)
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
 	}
 

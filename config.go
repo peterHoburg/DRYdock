@@ -23,5 +23,5 @@ func InitLogger() {
 
 	consoleWriter := zerolog.ConsoleWriter{Out: os.Stderr}
 	multi := zerolog.MultiLevelWriter(consoleWriter, logFile)
-	log.Logger = zerolog.New(multi).With().Timestamp().Caller().Logger()
+	log.Logger = zerolog.New(multi).Level(zerolog.TraceLevel).With().Timestamp().Caller().Logger()
 }
