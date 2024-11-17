@@ -1,4 +1,4 @@
-package composeApi
+package api
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ func handleErr(c echo.Context, err error) error {
 	return c.Render(http.StatusOK, "errors", err)
 }
 
-func Get(c echo.Context) error {
+func ComposeGet(c echo.Context) error {
 	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles()
 	var composeFiles []internal.Compose
 
@@ -42,7 +42,7 @@ func Get(c echo.Context) error {
 	return c.Render(http.StatusOK, "containerRows", composeFiles)
 }
 
-func Run(c echo.Context) error {
+func ComposeRun(c echo.Context) error {
 	var defaultEnvironmentSelect string
 	var environment string
 	composeRunData := internal.ComposeRunData{}
@@ -74,7 +74,14 @@ func Run(c echo.Context) error {
 			continue
 		}
 		if k == "composeFileNameOverride" {
-			composeRunData.ComposeFileNameOverride = v[0]
+			if v[0] == "" {
+				continue
+			}
+			composeRunData.NewDockerComposePath, err = filepath.Abs(v[0])
+			if err != nil {
+				log.Error().Err(err).Msg("")
+				return handleErr(c, err)
+			}
 			continue
 		}
 	}
@@ -101,10 +108,12 @@ func Run(c echo.Context) error {
 			})
 		}
 	}
+	if composeRunData.NewDockerComposePath == "" {
+		composeRunData.NewDockerComposePath, err = filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
+	}
 	composeRunData.ProjectName = fmt.Sprintf("project-%d", time.Now().Unix())
 	composeRunData.NetworkName = fmt.Sprintf("network-%d", time.Now().Unix())
 	composeRunData.EnvFilePath = "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
-	composeRunData.NewDockerComposePath, err = filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
