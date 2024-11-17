@@ -44,12 +44,8 @@ func Get(c echo.Context) error {
 
 func Run(c echo.Context) error {
 	var defaultEnvironmentSelect string
-	var composeFiles []*internal.Compose
 	var environment string
-	removeOrphans := false
-	alwaysRecreateDeps := false
-	customComposeCommand := ""
-
+	composeRunData := internal.ComposeRunData{}
 	form, err := c.FormParams()
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -62,15 +58,15 @@ func Run(c echo.Context) error {
 			continue
 		}
 		if k == "removeOrphans" {
-			removeOrphans = true
+			composeRunData.RemoveOrphans = true
 			continue
 		}
 		if k == "alwaysRecreateDeps" {
-			alwaysRecreateDeps = true
+			composeRunData.AlwaysRecreateDeps = true
 			continue
 		}
 		if k == "customComposeCommand" {
-			customComposeCommand = v[0]
+			composeRunData.CustomComposeCommand = v[0]
 			continue
 		}
 	}
@@ -83,39 +79,29 @@ func Run(c echo.Context) error {
 				environment = v[0]
 			}
 			if k == "rootComposeFile" {
-				composeFiles = append(composeFiles, &internal.Compose{
+				composeRunData.ComposeFiles = append(composeRunData.ComposeFiles, &internal.Compose{
 					Path:        v[0] + "/docker-compose.yml",
 					Active:      internal.Pointer(true),
 					Environment: &environment,
 				})
 				continue
 			}
-			composeFiles = append(composeFiles, &internal.Compose{
+			composeRunData.ComposeFiles = append(composeRunData.ComposeFiles, &internal.Compose{
 				Path:        k + "/docker-compose.yml",
 				Active:      internal.Pointer(true),
 				Environment: &environment,
 			})
 		}
 	}
-	projectName := fmt.Sprintf("project-%d", time.Now().Unix())
-	networkName := fmt.Sprintf("network-%d", time.Now().Unix())
-	envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
-	newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
+	composeRunData.ProjectName = fmt.Sprintf("project-%d", time.Now().Unix())
+	composeRunData.NetworkName = fmt.Sprintf("network-%d", time.Now().Unix())
+	composeRunData.EnvFilePath = "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
+	composeRunData.NewDockerComposePath, err = filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
 	}
 
-	composeRunData := internal.ComposeRunData{
-		ComposeFiles:         composeFiles,
-		ProjectName:          projectName,
-		NetworkName:          networkName,
-		EnvFilePath:          envFilePath,
-		NewDockerComposePath: newDockerComposePath,
-		RemoveOrphans:        removeOrphans,
-		AlwaysRecreateDeps:   alwaysRecreateDeps,
-		CustomComposeCommand: customComposeCommand,
-	}
 	composeRunDataReturn, err := internal.ComposeFilesToRunCommand(composeRunData)
 	if err != nil {
 		log.Error().Err(err).Msg("")

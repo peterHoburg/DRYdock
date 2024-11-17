@@ -27,14 +27,16 @@ func (c Compose) String() string {
 }
 
 type ComposeRunData struct {
-	ComposeFiles         []*Compose
-	ProjectName          string
-	NetworkName          string
-	EnvFilePath          string
-	NewDockerComposePath string
-	RemoveOrphans        bool
-	AlwaysRecreateDeps   bool
-	CustomComposeCommand string
+	ComposeFiles                   []*Compose
+	ProjectName                    string
+	NetworkName                    string
+	EnvFilePath                    string
+	NewDockerComposePath           string
+	RemoveOrphans                  bool
+	AlwaysRecreateDeps             bool
+	CustomComposeCommand           string
+	StopAllContainersBeforeRunning bool
+	composeFileNameOverride        string
 }
 
 type ComposeRunDataReturn struct {
