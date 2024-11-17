@@ -2,13 +2,14 @@ package composeApi
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os/exec"
 	"path/filepath"
 	"time"
 
 	"github.com/labstack/echo/v4"
+
+	"github.com/rs/zerolog/log"
 
 	"drydock/internal"
 )
@@ -20,19 +21,20 @@ type RunReturnData struct {
 }
 
 func handleErr(c echo.Context, err error) error {
-	log.Println(err)
 	c.Response().Header().Add("HX-Retarget", "#errors")
 	c.Response().Header().Add("HX-Reswap", "innerHTML")
 	return c.Render(http.StatusOK, "errors", err)
 }
 
 func Get(c echo.Context) error {
-	// TODO remove root from UI, But we need to find it in the run function
 	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles()
+	var composeFiles []internal.Compose
+
 	if err != nil {
+		log.Error().Err(err)
 		return handleErr(c, err)
 	}
-	var composeFiles []internal.Compose
+
 	composeFiles = append(composeFiles, internal.Compose{Name: "Root", Path: rootComposeFile.Project.WorkingDir, Active: internal.Pointer(false)})
 	for _, composeFile := range childComposeFiles {
 		composeFiles = append(composeFiles, internal.Compose{Name: composeFile.Name, Path: composeFile.Project.WorkingDir, Active: internal.Pointer(false)})
@@ -43,15 +45,16 @@ func Get(c echo.Context) error {
 func Run(c echo.Context) error {
 	var defaultEnvironmentSelect string
 	var composeFiles []*internal.Compose
+	var environment string
 	removeOrphans := false
 	alwaysRecreateDeps := false
 	customComposeCommand := ""
 
 	form, err := c.FormParams()
 	if err != nil {
+		log.Error().Err(err)
 		return handleErr(c, err)
 	}
-	var environment string
 
 	for k, v := range form {
 		if k == "defaultEnvironmentSelect" {
@@ -99,7 +102,8 @@ func Run(c echo.Context) error {
 	envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
 	newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
 	if err != nil {
-		log.Println(err)
+		log.Error().Err(err)
+		return handleErr(c, err)
 	}
 
 	composeRunData := internal.ComposeRunData{
@@ -114,28 +118,33 @@ func Run(c echo.Context) error {
 	}
 	composeRunDataReturn, err := internal.ComposeFilesToRunCommand(composeRunData)
 	if err != nil {
+		log.Error().Err(err)
 		return handleErr(c, err)
 	}
 
 	combinedComposeFileYaml, err := composeRunDataReturn.ComposeFile.Project.MarshalYAML()
 	if err != nil {
+		log.Error().Err(err)
 		return handleErr(c, err)
 	}
 
 	err = internal.WriteComposeFile(composeRunData.NewDockerComposePath, combinedComposeFileYaml)
 	if err != nil {
+		log.Error().Err(err)
 		return handleErr(c, err)
 	}
 
 	cmd := exec.Command("docker", composeRunDataReturn.Command...)
 	output, err := cmd.CombinedOutput()
-	println(string(output))
 
 	if err != nil {
 		if output == nil {
+			log.Error().Err(err).Msg(fmt.Sprintf("Error running docker compose command: %s", composeRunDataReturn.Command))
 			return handleErr(c, err)
 		}
+		log.Error().Err(err).Msg(fmt.Sprintf("Error running docker compose command: %s \nOutput: %s", composeRunDataReturn.Command, string(output)))
 		return c.Render(http.StatusOK, "run", RunReturnData{Error: err, Output: string(output), LogCommand: "ERROR"})
 	}
+	log.Info().Msg(string(output))
 	return c.Render(http.StatusOK, "run", RunReturnData{Output: string(output), LogCommand: fmt.Sprintf("docker compose -f %s logs -t -f ", composeRunDataReturn.ComposeFile.Path)})
 }

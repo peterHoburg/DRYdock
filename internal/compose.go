@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
+	"github.com/rs/zerolog/log"
 )
 
 type Compose struct {
@@ -20,6 +20,10 @@ type Compose struct {
 	Environment   *string
 	IsRootCompose *bool
 	Project       *types.Project
+}
+
+func (c Compose) String() string {
+	return fmt.Sprintf("Name: %s, Path: %s, Active: %t, Environment: %s, IsRootCompose: %t", c.Name, c.Path, *c.Active, *c.Environment, *c.IsRootCompose)
 }
 
 type ComposeRunData struct {
@@ -38,9 +42,6 @@ type ComposeRunDataReturn struct {
 	Command     []string
 }
 
-func (c Compose) String() string {
-	return fmt.Sprintf("Name: %s, Path: %s, Active: %t, Environment: %s, IsRootCompose: %t", c.Name, c.Path, *c.Active, *c.Environment, *c.IsRootCompose)
-}
 func Pointer[T any](d T) *T {
 	return &d
 }
@@ -106,7 +107,7 @@ func GenerateComposeCommand(compose *Compose, composeRunData ComposeRunData) []s
 	if composeRunData.AlwaysRecreateDeps {
 		composeCommand = append(composeCommand, "--always-recreate-deps")
 	}
-	log.Println(composeCommand)
+	log.Info().Msg(strings.Join(composeCommand, " "))
 	return composeCommand
 }
 
@@ -226,7 +227,7 @@ func LoadAndOrganizeComposeFiles(composeFiles []*Compose) (*Compose, []*Compose,
 	for _, compose := range composeFiles {
 		composeFile, err := LoadComposeFile(compose)
 		if err != nil {
-			log.Println(compose)
+			log.Info().Msg(compose.String())
 			return nil, nil, err
 		}
 		updatedComposeFiles = append(updatedComposeFiles, composeFile)

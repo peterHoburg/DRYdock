@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/rs/zerolog/log"
 
 	composeApi "drydock/api/docker/compose"
 )
@@ -38,11 +39,14 @@ type Count struct {
 }
 
 func Start() {
-	// Echo instance
+	log.Info().Msg("Starting Drydock API")
+
 	e := echo.New()
 
 	// Middleware
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Output: log.Logger,
+	}))
 	e.Use(middleware.Recover())
 	count := Count{Count: 0}
 	e.Renderer = newTemplate()
@@ -55,11 +59,5 @@ func Start() {
 	e.FileFS("/favicon.ico", "favicon.ico", staticFs)
 	e.GET("/compose", composeApi.Get)
 	e.POST("/compose/run", composeApi.Run)
-	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
-}
-
-// Handler
-func hello(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
 }
