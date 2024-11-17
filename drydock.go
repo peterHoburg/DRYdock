@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"drydock/api"
 )
 
@@ -10,49 +8,7 @@ import (
 // Set env file per service
 // Add tests
 
-func initLogger() {
-	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
-}
 func main() {
+	InitLogger()
 	api.Start()
-}
-func mainCli() {
-	initLogger()
-	//projectName := fmt.Sprintf("project-%d", time.Now().Unix())
-	//networkName := fmt.Sprintf("network-%d", time.Now().Unix())
-	//envFilePath := "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
-	//
-	//newDockerComposePath, err := filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//
-	//rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles(projectName)
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//combinedComposeFile := internal.SetCombinedDepends(childComposeFiles, rootComposeFile)
-	//combinedComposeFile = internal.CombineComposeFiles(childComposeFiles, combinedComposeFile)
-	//combinedComposeFile = internal.SetNetwork(combinedComposeFile, networkName)
-	//combinedComposeFile = internal.SetEnvFile(combinedComposeFile, envFilePath)
-	//
-	//combinedComposeFileYaml, err := combinedComposeFile.MarshalYAML()
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//
-	//err = internal.WriteComposeFile(newDockerComposePath, combinedComposeFileYaml)
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//
-	//composeCommand := internal.GenerateComposeCommand(newDockerComposePath)
-	//cmd := exec.Command("docker", composeCommand...)
-	//output, err := cmd.CombinedOutput()
-	//println(string(output))
-	//
-	//if err != nil {
-	//	log.Println(err)
-	//}
-
 }
