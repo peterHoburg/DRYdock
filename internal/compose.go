@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 
@@ -36,7 +37,7 @@ type ComposeRunData struct {
 	AlwaysRecreateDeps             bool
 	CustomComposeCommand           string
 	StopAllContainersBeforeRunning bool
-	composeFileNameOverride        string
+	ComposeFileNameOverride        string
 }
 
 type ComposeRunDataReturn struct {
@@ -273,8 +274,38 @@ func PickRootComposeFile(composeFiles []*Compose) (*Compose, []*Compose, error) 
 	return rootCompose, composeFiles, nil
 }
 
+func stopAllContainers() error {
+	log.Debug().Msg("Stopping all containers")
+
+	allRunningContainers, err := exec.Command("docker", "ps", "-q").CombinedOutput()
+	if len(allRunningContainers) == 0 {
+		log.Info().Msg("No running containers to stop")
+		return nil
+	}
+	strippedAllRunningContainers := strings.TrimSpace(string(allRunningContainers))
+	splitContainers := strings.Split(strippedAllRunningContainers, "\n")
+
+	command := []string{"docker", "stop"}
+	command = append(command, splitContainers...)
+	log.Info().Msg(fmt.Sprintf("Running command: %s", strings.Join(command, " ")))
+
+	cmd := exec.Command(command[0], command[1:]...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Error().Err(err).Msg(string(output))
+		return err
+	}
+	return nil
+}
+
 func ComposeFilesToRunCommand(composeRunData ComposeRunData) (*ComposeRunDataReturn, error) {
 	log.Debug().Msg("Converting compose files to run command")
+	if composeRunData.StopAllContainersBeforeRunning {
+		err := stopAllContainers()
+		if err != nil {
+			return nil, err
+		}
+	}
 	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeRunData.ComposeFiles)
 	if err != nil {
 		return nil, err

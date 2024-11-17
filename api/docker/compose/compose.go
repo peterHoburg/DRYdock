@@ -65,8 +65,16 @@ func Run(c echo.Context) error {
 			composeRunData.AlwaysRecreateDeps = true
 			continue
 		}
+		if k == "stopAllContainersBeforeRunning" {
+			composeRunData.StopAllContainersBeforeRunning = true
+			continue
+		}
 		if k == "customComposeCommand" {
 			composeRunData.CustomComposeCommand = v[0]
+			continue
+		}
+		if k == "composeFileNameOverride" {
+			composeRunData.ComposeFileNameOverride = v[0]
 			continue
 		}
 	}
