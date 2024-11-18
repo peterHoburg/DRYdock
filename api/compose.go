@@ -43,8 +43,7 @@ func ComposeGet(c echo.Context) error {
 }
 
 func ComposeRun(c echo.Context) error {
-	var defaultEnvironmentSelect string
-	var environment string
+
 	composeRunData := internal.ComposeRunData{}
 	form, err := c.FormParams()
 	if err != nil {
@@ -52,62 +51,13 @@ func ComposeRun(c echo.Context) error {
 		return handleErr(c, err)
 	}
 
-	for k, v := range form {
-		if k == "defaultEnvironmentSelect" {
-			defaultEnvironmentSelect = v[0]
-			continue
-		}
-		if k == "removeOrphans" {
-			composeRunData.RemoveOrphans = true
-			continue
-		}
-		if k == "alwaysRecreateDeps" {
-			composeRunData.AlwaysRecreateDeps = true
-			continue
-		}
-		if k == "stopAllContainersBeforeRunning" {
-			composeRunData.StopAllContainersBeforeRunning = true
-			continue
-		}
-		if k == "customComposeCommand" {
-			composeRunData.CustomComposeCommand = v[0]
-			continue
-		}
-		if k == "composeFileNameOverride" {
-			if v[0] == "" {
-				continue
-			}
-			composeRunData.NewDockerComposePath, err = filepath.Abs(v[0])
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return handleErr(c, err)
-			}
-			continue
-		}
+	composeRunData, err = composeRunData.LoadFromForm(form)
+
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return handleErr(c, err)
 	}
 
-	for k, v := range form {
-		if (len(v) > 1 && v[1] == "on") || k == "rootComposeFile" {
-			if v[0] == "default" {
-				environment = defaultEnvironmentSelect
-			} else {
-				environment = v[0]
-			}
-			if k == "rootComposeFile" {
-				composeRunData.ComposeFiles = append(composeRunData.ComposeFiles, &internal.Compose{
-					Path:        v[0] + "/docker-compose.yml",
-					Active:      internal.Pointer(true),
-					Environment: &environment,
-				})
-				continue
-			}
-			composeRunData.ComposeFiles = append(composeRunData.ComposeFiles, &internal.Compose{
-				Path:        k + "/docker-compose.yml",
-				Active:      internal.Pointer(true),
-				Environment: &environment,
-			})
-		}
-	}
 	if composeRunData.NewDockerComposePath == "" {
 		composeRunData.NewDockerComposePath, err = filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
 	}

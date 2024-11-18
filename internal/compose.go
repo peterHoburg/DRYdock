@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -38,6 +40,85 @@ type ComposeRunData struct {
 	CustomComposeCommand           string
 	StopAllContainersBeforeRunning bool
 	ComposeFileNameOverride        string
+	PreRunCommand                  string
+	EnvVarFileFormat               string
+	EnvVarFileSetupCommand         string
+}
+
+func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
+	var defaultEnvironmentSelect string
+	var environment string
+
+	for k, v := range form {
+		if k == "defaultEnvironmentSelect" {
+			defaultEnvironmentSelect = v[0]
+			continue
+		}
+		if k == "removeOrphans" {
+			c.RemoveOrphans = true
+			continue
+		}
+		if k == "alwaysRecreateDeps" {
+			c.AlwaysRecreateDeps = true
+			continue
+		}
+		if k == "stopAllContainersBeforeRunning" {
+			c.StopAllContainersBeforeRunning = true
+			continue
+		}
+		if k == "customComposeCommand" {
+			c.CustomComposeCommand = v[0]
+			continue
+		}
+		if k == "composeFileNameOverride" {
+			if v[0] == "" {
+				continue
+			}
+			newDockerComposePath, err := filepath.Abs(v[0])
+			if err != nil {
+				return c, err
+			}
+			c.NewDockerComposePath = newDockerComposePath
+			continue
+		}
+
+		if k == "preRunCommand" {
+			c.PreRunCommand = v[0]
+			continue
+		}
+		if k == "envVarFileFormat" {
+			c.EnvVarFileFormat = v[0]
+			continue
+		}
+		if k == "envVarFileSetupCommand" {
+			c.EnvVarFileSetupCommand = v[0]
+			continue
+		}
+	}
+
+	for k, v := range form {
+		if (len(v) > 1 && v[1] == "on") || k == "rootComposeFile" {
+			if v[0] == "default" {
+				environment = defaultEnvironmentSelect
+			} else {
+				environment = v[0]
+			}
+			if k == "rootComposeFile" {
+				c.ComposeFiles = append(c.ComposeFiles, &Compose{
+					Path:        v[0] + "/docker-compose.yml",
+					Active:      Pointer(true),
+					Environment: &environment,
+				})
+				continue
+			}
+			c.ComposeFiles = append(c.ComposeFiles, &Compose{
+				Path:        k + "/docker-compose.yml",
+				Active:      Pointer(true),
+				Environment: &environment,
+			})
+		}
+	}
+	return c, nil
 }
 
 type ComposeRunDataReturn struct {
