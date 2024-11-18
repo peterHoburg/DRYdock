@@ -54,7 +54,7 @@ func Start() {
 	})
 
 	e.StaticFS("/static", staticFs)
-	e.FileFS("/favicon.ico", "favicon.ico", staticFs)
+	e.FileFS("/favicon.ico", "static/favicon.png", staticFs)
 	e.GET("/compose", ComposeGet)
 	e.POST("/compose/run", ComposeRun)
 	e.Logger.Fatal(e.Start(":1323"))
