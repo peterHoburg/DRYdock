@@ -389,6 +389,24 @@ func stopAllContainers() error {
 	return nil
 }
 
+func runEnvVarSetupCommand(composeRunData ComposeRunData) error {
+	if composeRunData.EnvVarFileSetupCommand == "" {
+		return nil
+	}
+	for _, compose := range composeRunData.ComposeFiles {
+		command := strings.Replace(composeRunData.EnvVarFileSetupCommand, "[[ENVIRONMENT]]", compose.Environment, 1)
+		log.Debug().Msg(fmt.Sprintf("Running env var setup command: %s", command))
+		cmd := exec.Command("sh", "-c", command)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Error().Err(err).Msg(fmt.Sprintf("Error running env var setup command: %s \nOutput: %s", command, string(output)))
+			return err
+		}
+		log.Info().Msg(string(output))
+	}
+	return nil
+}
+
 func ComposeFilesToRunCommand(composeRunData ComposeRunData) (*ComposeRunDataReturn, error) {
 	log.Debug().Msg("Converting compose files to run command")
 	if composeRunData.StopAllContainersBeforeRunning {
@@ -398,6 +416,10 @@ func ComposeFilesToRunCommand(composeRunData ComposeRunData) (*ComposeRunDataRet
 		}
 	}
 	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeRunData.ComposeFiles)
+	if err != nil {
+		return nil, err
+	}
+	err = runEnvVarSetupCommand(composeRunData)
 	if err != nil {
 		return nil, err
 	}
