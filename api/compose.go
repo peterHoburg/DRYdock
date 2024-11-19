@@ -35,15 +35,14 @@ func ComposeGet(c echo.Context) error {
 		return handleErr(c, err)
 	}
 
-	composeFiles = append(composeFiles, internal.Compose{Name: "Root", Path: rootComposeFile.Project.WorkingDir, Active: internal.Pointer(false)})
+	composeFiles = append(composeFiles, internal.Compose{Name: "Root", Path: rootComposeFile.Project.WorkingDir, Active: false})
 	for _, composeFile := range childComposeFiles {
-		composeFiles = append(composeFiles, internal.Compose{Name: composeFile.Name, Path: composeFile.Project.WorkingDir, Active: internal.Pointer(false)})
+		composeFiles = append(composeFiles, internal.Compose{Name: composeFile.Name, Path: composeFile.Project.WorkingDir, Active: false})
 	}
 	return c.Render(http.StatusOK, "containerRows", composeFiles)
 }
 
 func ComposeRun(c echo.Context) error {
-
 	composeRunData := internal.ComposeRunData{}
 	form, err := c.FormParams()
 	if err != nil {
@@ -52,18 +51,28 @@ func ComposeRun(c echo.Context) error {
 	}
 
 	composeRunData, err = composeRunData.LoadFromForm(form)
-
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
 	}
+
+	//if composeRunData.PreRunCommand != "" {
+	//	command := strings.Split(composeRunData.PreRunCommand, " ")
+	//
+	//	cmd := exec.Command(command[0], command[1:]...)
+	//	output, err := cmd.CombinedOutput()
+	//	if err != nil {
+	//		log.Error().Err(err).Msg(fmt.Sprintf("Error running pre-run command: %s \nOutput: %s", composeRunData.PreRunCommand, string(output)))
+	//		return handleErr(c, err)
+	//	}
+	//	log.Info().Msg(string(output))
+	//}
 
 	if composeRunData.NewDockerComposePath == "" {
 		composeRunData.NewDockerComposePath, err = filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
 	}
 	composeRunData.ProjectName = fmt.Sprintf("project-%d", time.Now().Unix())
 	composeRunData.NetworkName = fmt.Sprintf("network-%d", time.Now().Unix())
-	composeRunData.EnvFilePath = "/home/peter/GolandProjects/DRYdock/testdata/example-repo-setup/.example-env-vars" // TODO generate the file path based on env that is being run
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
