@@ -9,8 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog/log"
-
-	composeApi "drydock/api/docker/compose"
 )
 
 // viewsFs holds our static web server content.
@@ -56,8 +54,8 @@ func Start() {
 	})
 
 	e.StaticFS("/static", staticFs)
-	e.FileFS("/favicon.ico", "favicon.ico", staticFs)
-	e.GET("/compose", composeApi.Get)
-	e.POST("/compose/run", composeApi.Run)
+	e.FileFS("/favicon.ico", "static/favicon.png", staticFs)
+	e.GET("/compose", ComposeGet)
+	e.POST("/compose/run", ComposeRun)
 	e.Logger.Fatal(e.Start(":1323"))
 }

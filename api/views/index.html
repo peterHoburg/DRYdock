@@ -101,6 +101,16 @@
   <br>
   Always recreate deps: <input type="checkbox" name="alwaysRecreateDeps">
   <br>
-  Custom Compose Command: <textarea name="customComposeCommand"></textarea>
+  Stop all containers before running: <input type="checkbox" name="stopAllContainersBeforeRunning">
+  <br>
+  Custom Compose Command:     <textarea style="height:11PX;" name="customComposeCommand"></textarea>
+  <br>
+  Compose file name override: <textarea style="height:11PX;" name="composeFileNameOverride"></textarea>
+  <br>
+  Pre-run command:            <textarea style="height:11PX;" name="preRunCommand"></textarea>
+  <br>
+  Env var file format:         <textarea style="height:11PX;" name="envVarFileFormat">.env-[[ENVIRONMENT]]</textarea>
+  <br>
+  Env var file setup command:   <textarea style="height:11PX;" name="envVarFileSetupCommand"></textarea>
 </div>
 {{ end }}

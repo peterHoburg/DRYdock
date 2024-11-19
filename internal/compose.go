@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -14,27 +17,111 @@ import (
 )
 
 type Compose struct {
-	Name          string
-	Path          string
-	Active        *bool
-	Environment   *string
-	IsRootCompose *bool
-	Project       *types.Project
+	Name             string
+	Path             string
+	Active           bool
+	Environment      string
+	IsRootCompose    bool
+	Project          *types.Project
+	EnvFilePath      string
+	EnvVarFileFormat string
 }
 
 func (c Compose) String() string {
-	return fmt.Sprintf("Name: %s, Path: %s, Active: %t, Environment: %s, IsRootCompose: %t", c.Name, c.Path, *c.Active, *c.Environment, *c.IsRootCompose)
+	return fmt.Sprintf("Name: %s, Path: %s, Active: %t, Environment: %s, IsRootCompose: %t", c.Name, c.Path, c.Active, c.Environment, c.IsRootCompose)
 }
 
 type ComposeRunData struct {
-	ComposeFiles         []*Compose
-	ProjectName          string
-	NetworkName          string
-	EnvFilePath          string
-	NewDockerComposePath string
-	RemoveOrphans        bool
-	AlwaysRecreateDeps   bool
-	CustomComposeCommand string
+	ComposeFiles                   []*Compose
+	ProjectName                    string
+	NetworkName                    string
+	NewDockerComposePath           string
+	RemoveOrphans                  bool
+	AlwaysRecreateDeps             bool
+	CustomComposeCommand           string
+	StopAllContainersBeforeRunning bool
+	ComposeFileNameOverride        string
+	PreRunCommand                  string
+	EnvVarFileSetupCommand         string
+}
+
+func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
+	var defaultEnvironmentSelect string
+	var environment string
+	var envVarFileFormat string
+
+	for k, v := range form {
+		if k == "defaultEnvironmentSelect" {
+			defaultEnvironmentSelect = v[0]
+			continue
+		}
+		if k == "removeOrphans" {
+			c.RemoveOrphans = true
+			continue
+		}
+		if k == "alwaysRecreateDeps" {
+			c.AlwaysRecreateDeps = true
+			continue
+		}
+		if k == "stopAllContainersBeforeRunning" {
+			c.StopAllContainersBeforeRunning = true
+			continue
+		}
+		if k == "customComposeCommand" {
+			c.CustomComposeCommand = v[0]
+			continue
+		}
+		if k == "composeFileNameOverride" {
+			if v[0] == "" {
+				continue
+			}
+			newDockerComposePath, err := filepath.Abs(v[0])
+			if err != nil {
+				return c, err
+			}
+			c.NewDockerComposePath = newDockerComposePath
+			continue
+		}
+
+		if k == "preRunCommand" {
+			c.PreRunCommand = v[0]
+			continue
+		}
+		if k == "envVarFileFormat" {
+			envVarFileFormat = v[0]
+			continue
+		}
+		if k == "envVarFileSetupCommand" {
+			c.EnvVarFileSetupCommand = v[0]
+			continue
+		}
+	}
+
+	for k, v := range form {
+		if (len(v) > 1 && v[1] == "on") || k == "rootComposeFile" {
+			if v[0] == "default" || k == "rootComposeFile" {
+				environment = defaultEnvironmentSelect
+			} else {
+				environment = v[0]
+			}
+			if k == "rootComposeFile" {
+				c.ComposeFiles = append(c.ComposeFiles, &Compose{
+					Path:             v[0] + "/docker-compose.yml",
+					Active:           true,
+					Environment:      environment,
+					EnvVarFileFormat: envVarFileFormat,
+				})
+				continue
+			}
+			c.ComposeFiles = append(c.ComposeFiles, &Compose{
+				Path:             k + "/docker-compose.yml",
+				Active:           true,
+				Environment:      environment,
+				EnvVarFileFormat: envVarFileFormat,
+			})
+		}
+	}
+	return c, nil
 }
 
 type ComposeRunDataReturn struct {
@@ -186,19 +273,24 @@ func setNetwork(combinedCompose *Compose, networkName string) *Compose {
 	return combinedCompose
 }
 
-func setEnvFile(combinedCompose *Compose, envFilePath string) *Compose {
-	log.Debug().Msg(fmt.Sprintf("Setting env file: %s in compose: %s", envFilePath, combinedCompose.Path))
-	for serviceName, service := range combinedCompose.Project.Services {
+func setEnvFile(compose *Compose) *Compose {
+	log.Debug().Msg(fmt.Sprintf("Setting env file: %s in compose: %s", compose.EnvFilePath, compose.Path))
+	envPath, err := filepath.Abs(strings.Replace(compose.EnvVarFileFormat, "[[ENVIRONMENT]]", compose.Environment, 1))
+	if err != nil {
+		log.Error().Err(err).Msg(fmt.Sprintf("Error setting env file: %s in compose: %s", envPath, compose.Path))
+		return compose
+	}
+	for serviceName, service := range compose.Project.Services {
 		service.EnvFiles = []types.EnvFile{
 			{
-				Path:     envFilePath,
+				Path:     envPath,
 				Required: true,
 				Format:   "",
 			},
 		}
-		combinedCompose.Project.Services[serviceName] = service
+		compose.Project.Services[serviceName] = service
 	}
-	return combinedCompose
+	return compose
 }
 func setProjectName(compose *Compose, projectName string) *Compose {
 	log.Debug().Msg(fmt.Sprintf("Setting project name: %s in compose: %s", projectName, compose.Path))
@@ -220,9 +312,9 @@ func GetAllComposeFiles() (*Compose, []*Compose, error) {
 		composeFiles = append(composeFiles, &Compose{
 			Name:          "",
 			Path:          path,
-			Active:        nil,
-			Environment:   nil,
-			IsRootCompose: nil,
+			Active:        false,
+			Environment:   "",
+			IsRootCompose: false,
 			Project:       nil,
 		})
 	}
@@ -244,8 +336,10 @@ func LoadAndOrganizeComposeFiles(composeFiles []*Compose) (*Compose, []*Compose,
 			log.Error().Err(err).Msg(compose.String())
 			return nil, nil, err
 		}
+		composeFile = setEnvFile(composeFile)
 		updatedComposeFiles = append(updatedComposeFiles, composeFile)
 	}
+
 	rootComposeFile, childComposeFiles, err := PickRootComposeFile(updatedComposeFiles)
 	return rootComposeFile, childComposeFiles, err
 }
@@ -271,16 +365,67 @@ func PickRootComposeFile(composeFiles []*Compose) (*Compose, []*Compose, error) 
 	return rootCompose, composeFiles, nil
 }
 
+func stopAllContainers() error {
+	log.Debug().Msg("Stopping all containers")
+
+	allRunningContainers, err := exec.Command("docker", "ps", "-q").CombinedOutput()
+	if len(allRunningContainers) == 0 {
+		log.Info().Msg("No running containers to stop")
+		return nil
+	}
+	strippedAllRunningContainers := strings.TrimSpace(string(allRunningContainers))
+	splitContainers := strings.Split(strippedAllRunningContainers, "\n")
+
+	command := []string{"docker", "stop"}
+	command = append(command, splitContainers...)
+	log.Info().Msg(fmt.Sprintf("Running command: %s", strings.Join(command, " ")))
+
+	cmd := exec.Command(command[0], command[1:]...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Error().Err(err).Msg(string(output))
+		return err
+	}
+	return nil
+}
+
+func runEnvVarSetupCommand(composeRunData ComposeRunData) error {
+	if composeRunData.EnvVarFileSetupCommand == "" {
+		return nil
+	}
+	for _, compose := range composeRunData.ComposeFiles {
+		command := strings.Replace(composeRunData.EnvVarFileSetupCommand, "[[ENVIRONMENT]]", compose.Environment, 1)
+		log.Debug().Msg(fmt.Sprintf("Running env var setup command: %s", command))
+		cmd := exec.Command("sh", "-c", command)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Error().Err(err).Msg(fmt.Sprintf("Error running env var setup command: %s \nOutput: %s", command, string(output)))
+			return err
+		}
+		log.Info().Msg(string(output))
+	}
+	return nil
+}
+
 func ComposeFilesToRunCommand(composeRunData ComposeRunData) (*ComposeRunDataReturn, error) {
 	log.Debug().Msg("Converting compose files to run command")
+	if composeRunData.StopAllContainersBeforeRunning {
+		err := stopAllContainers()
+		if err != nil {
+			return nil, err
+		}
+	}
 	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeRunData.ComposeFiles)
+	if err != nil {
+		return nil, err
+	}
+	err = runEnvVarSetupCommand(composeRunData)
 	if err != nil {
 		return nil, err
 	}
 	combinedComposeFile := setCombinedDepends(childComposeFiles, rootComposeFile)
 	combinedComposeFile = CombineComposeFiles(childComposeFiles, combinedComposeFile)
 	combinedComposeFile = setNetwork(combinedComposeFile, composeRunData.NetworkName)
-	combinedComposeFile = setEnvFile(combinedComposeFile, composeRunData.EnvFilePath)
 	combinedComposeFile = setProjectName(combinedComposeFile, composeRunData.ProjectName)
 	combinedComposeFile.Path = composeRunData.NewDockerComposePath
 
