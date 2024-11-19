@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -56,17 +57,17 @@ func ComposeRun(c echo.Context) error {
 		return handleErr(c, err)
 	}
 
-	//if composeRunData.PreRunCommand != "" {
-	//	command := strings.Split(composeRunData.PreRunCommand, " ")
-	//
-	//	cmd := exec.Command(command[0], command[1:]...)
-	//	output, err := cmd.CombinedOutput()
-	//	if err != nil {
-	//		log.Error().Err(err).Msg(fmt.Sprintf("Error running pre-run command: %s \nOutput: %s", composeRunData.PreRunCommand, string(output)))
-	//		return handleErr(c, err)
-	//	}
-	//	log.Info().Msg(string(output))
-	//}
+	if composeRunData.PreRunCommand != "" {
+		command := strings.Split(composeRunData.PreRunCommand, " ")
+
+		cmd := exec.Command(command[0], command[1:]...)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Error().Err(err).Msg(fmt.Sprintf("Error running pre-run command: %s \nOutput: %s", composeRunData.PreRunCommand, string(output)))
+			return handleErr(c, err)
+		}
+		log.Info().Msg(string(output))
+	}
 
 	if composeRunData.NewDockerComposePath == "" {
 		composeRunData.NewDockerComposePath, err = filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
