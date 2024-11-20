@@ -9,6 +9,7 @@ import (
 // Add tests
 
 func main() {
+	LoadConfig()
 	InitLogger()
 	api.Start()
 }

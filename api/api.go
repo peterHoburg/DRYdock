@@ -2,6 +2,7 @@ package api
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 // viewsFs holds our static web server content.
@@ -32,12 +34,27 @@ func newTemplate() *Templates {
 	}
 }
 
-type Count struct {
-	Count int
+type IndexData struct {
+	CustomComposeCommand    string
+	ComposeFileNameOverride string
+	PreRunCommand           string
+	EnvVarFileSetupCommand  string
+	EnvVarFileFormat        string
+}
+
+func (i *IndexData) LoadFromViper() *IndexData {
+	i.CustomComposeCommand = viper.Get("CUSTOM_COMPOSE_COMMAND").(string)
+	i.ComposeFileNameOverride = viper.Get("COMPOSE_FILE_NAME_OVERRIDE").(string)
+	i.PreRunCommand = viper.Get("PRE_RUN_COMMAND").(string)
+	i.EnvVarFileSetupCommand = viper.Get("ENV_VAR_FILE_SETUP_COMMAND").(string)
+	i.EnvVarFileFormat = viper.Get("ENV_VAR_FORMAT").(string)
+	return i
 }
 
 func Start() {
 	log.Info().Msg("Starting Drydock API")
+	indexData := IndexData{}
+	indexData = *indexData.LoadFromViper()
 
 	e := echo.New()
 
@@ -46,16 +63,15 @@ func Start() {
 		Output: log.Logger,
 	}))
 	e.Use(middleware.Recover())
-	count := Count{Count: 0}
 	e.Renderer = newTemplate()
 
 	e.GET("/", func(c echo.Context) error {
-		return c.Render(http.StatusOK, "index", count)
+		return c.Render(http.StatusOK, "index", indexData)
 	})
 
 	e.StaticFS("/static", staticFs)
 	e.FileFS("/favicon.ico", "static/favicon.png", staticFs)
 	e.GET("/compose", ComposeGet)
 	e.POST("/compose/run", ComposeRun)
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", viper.Get("PORT").(string))))
 }
