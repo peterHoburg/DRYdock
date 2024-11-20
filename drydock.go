@@ -2,7 +2,6 @@ package main
 
 import (
 	"drydock/api"
-	"github.com/rs/zerolog/log"
 )
 
 // TODO
@@ -10,10 +9,7 @@ import (
 // Add tests
 
 func main() {
-	err := LoadConfig()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Error loading config")
-	}
+	LoadConfig()
 	InitLogger()
 	api.Start()
 }
