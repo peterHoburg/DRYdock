@@ -13,8 +13,7 @@ DRYdock will then create a compose file with only those services, and run it.
 
 
 ## Installation
-* `wget https://github.com/peterHoburg/DRYdock/releases/latest/download/drydock -P <dir on path>`
-* `chmod +x <dir on path>/drydock`
+* `export DRYDOCK_DIR="<dir on path>" && touch $DRYDOCK_DIR/drydock && wget https://github.com/peterHoburg/DRYdock/releases/latest/download/drydock -O $DRYDOCK_DIR/drydock && chmod +x $DRYDOCK_DIR/drydock`
 
 ## Update
 Same as installing
