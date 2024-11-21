@@ -345,7 +345,7 @@ func LoadAndOrganizeComposeFiles(composeFiles []*Compose, rootDir string) (*Comp
 		composeFile, err := LoadComposeFile(compose)
 		if err != nil {
 			log.Error().Err(err).Msg(compose.String())
-			return nil, nil, err
+			continue
 		}
 		composeFile = setEnvFile(composeFile, rootDir)
 		updatedComposeFiles = append(updatedComposeFiles, composeFile)
