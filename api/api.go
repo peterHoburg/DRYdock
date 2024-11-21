@@ -40,6 +40,7 @@ type IndexData struct {
 	PreRunCommand          string
 	EnvVarFileSetupCommand string
 	EnvVarFileFormat       string
+	RootDir                string
 }
 
 func (i *IndexData) LoadFromViper() *IndexData {
@@ -48,6 +49,7 @@ func (i *IndexData) LoadFromViper() *IndexData {
 	i.PreRunCommand = viper.Get("PRE_RUN_COMMAND").(string)
 	i.EnvVarFileSetupCommand = viper.Get("ENV_VAR_FILE_SETUP_COMMAND").(string)
 	i.EnvVarFileFormat = viper.Get("ENV_VAR_FORMAT").(string)
+	i.RootDir = viper.Get("ROOT_DIR").(string)
 	return i
 }
 
