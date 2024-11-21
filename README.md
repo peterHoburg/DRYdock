@@ -1,10 +1,16 @@
 # DRYdock
-`wget https://github.com/peterHoburg/DRYdock/releases/latest/download/drydock`
-## Features
-* Find all docker files recursively down from the current dir
-* From n number of containers generate a compose file
-  * service for each container with the dir as context
-  * Pass env file (that is generated)
-  * Add network
-  * Add a single service that maps all other services together with "requires"
-  * Each dir that contains a Dockerfile file can also compose file that will contain the full service definition. If there is no compose file then default to a simple service def
+## Installation
+* `wget https://github.com/peterHoburg/DRYdock/releases/latest/download/drydock -P <dir on path>`
+* `chmod +x <dir on path>/drydock`
+
+## Update
+Same as installing
+
+## Setup
+### Optional
+Create a `drydock.yaml` file in the root of the project. This contains keys that will overwrite the default values in the UI
+
+## Usage
+* cd into the directory that contains your root docker-compose.yml file
+* Run `drydock`
+* navigate to localhost:1994 (default port) in your browser
