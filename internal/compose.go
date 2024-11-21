@@ -284,7 +284,7 @@ func setNetwork(combinedCompose *Compose, networkName string) *Compose {
 
 func setEnvFile(compose *Compose) *Compose {
 	log.Debug().Msg(fmt.Sprintf("Setting env file: %s in compose: %s", compose.EnvFilePath, compose.Path))
-	envPath := filepath.Join(config.ROOT_DIR, strings.Replace(compose.EnvVarFileFormat, "[[ENVIRONMENT]]", compose.Environment, 1))
+	envPath := filepath.Join(config.RootDir, strings.Replace(compose.EnvVarFileFormat, "[[ENVIRONMENT]]", compose.Environment, 1))
 
 	for serviceName, service := range compose.Project.Services {
 		service.EnvFiles = []types.EnvFile{

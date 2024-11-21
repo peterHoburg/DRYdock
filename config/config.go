@@ -11,17 +11,19 @@ import (
 	"github.com/spf13/viper"
 )
 
-var ROOT_DIR string = getRootDir()
+var RootDir = getRootDir()
 
 func getRootDir() string {
-	ex, err := os.Executable()
+	//ex, err := os.Executable()
+	//if err != nil {
+	//	panic(err)
+	//}
+	// "." will give a better result for where the binary is run from that os.Executable()
+	exPath, err := filepath.Abs(".")
 	if err != nil {
 		panic(err)
 	}
-	exPath, err := filepath.Abs(filepath.Dir(ex))
-	if err != nil {
-		panic(err)
-	}
+	log.Info().Msg(fmt.Sprintf("ROOT_DIR: %s", exPath))
 	return exPath
 }
 
@@ -44,7 +46,7 @@ func InitLogger() {
 }
 
 func LoadConfig() {
-	composeFileName, err := filepath.Abs(filepath.Join(ROOT_DIR, "docker-compose-[[TIMESTAMP]].yml"))
+	composeFileName, err := filepath.Abs(filepath.Join(RootDir, "docker-compose-[[TIMESTAMP]].yml"))
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting composeFileName")
 		composeFileName = "docker-compose-[[TIMESTAMP]].yml"
