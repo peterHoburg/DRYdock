@@ -35,16 +35,16 @@ func newTemplate() *Templates {
 }
 
 type IndexData struct {
-	CustomComposeCommand    string
-	ComposeFileNameOverride string
-	PreRunCommand           string
-	EnvVarFileSetupCommand  string
-	EnvVarFileFormat        string
+	ComposeCommand         string
+	ComposeFileName        string
+	PreRunCommand          string
+	EnvVarFileSetupCommand string
+	EnvVarFileFormat       string
 }
 
 func (i *IndexData) LoadFromViper() *IndexData {
-	i.CustomComposeCommand = viper.Get("CUSTOM_COMPOSE_COMMAND").(string)
-	i.ComposeFileNameOverride = viper.Get("COMPOSE_FILE_NAME_OVERRIDE").(string)
+	i.ComposeCommand = viper.Get("COMPOSE_COMMAND").(string)
+	i.ComposeFileName = viper.Get("COMPOSE_FILE_NAME").(string)
 	i.PreRunCommand = viper.Get("PRE_RUN_COMMAND").(string)
 	i.EnvVarFileSetupCommand = viper.Get("ENV_VAR_FILE_SETUP_COMMAND").(string)
 	i.EnvVarFileFormat = viper.Get("ENV_VAR_FORMAT").(string)

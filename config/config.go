@@ -1,14 +1,29 @@
-package main
+package config
 
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
+
+var ROOT_DIR string = getRootDir()
+
+func getRootDir() string {
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	exPath, err := filepath.Abs(filepath.Dir(ex))
+	if err != nil {
+		panic(err)
+	}
+	return exPath
+}
 
 func InitLogger() {
 	// TODO set logging level via config
@@ -29,6 +44,11 @@ func InitLogger() {
 }
 
 func LoadConfig() {
+	composeFileName, err := filepath.Abs(filepath.Join(ROOT_DIR, "docker-compose-[[TIMESTAMP]].yml"))
+	if err != nil {
+		log.Error().Err(err).Msg("Error getting composeFileName")
+		composeFileName = "docker-compose-[[TIMESTAMP]].yml"
+	}
 	viper.SetDefault("LOG_LEVEL", "debug")
 	viper.SetDefault("PORT", "1994")
 
@@ -36,8 +56,8 @@ func LoadConfig() {
 	viper.SetDefault("ALWAYS_RECREATE_DEPS", false)
 	viper.SetDefault("STOP_ALL_CONTAINERS_BEFORE_RUNNING", false)
 
-	viper.SetDefault("CUSTOM_COMPOSE_COMMAND", "")
-	viper.SetDefault("COMPOSE_FILE_NAME_OVERRIDE", "")
+	viper.SetDefault("COMPOSE_COMMAND", "compose -f [[COMPOSE_FILE_NAME]] up --build -d")
+	viper.SetDefault("COMPOSE_FILE_NAME", composeFileName)
 	viper.SetDefault("PRE_RUN_COMMAND", "")
 	viper.SetDefault("ENV_VAR_FORMAT", ".env-[[ENVIRONMENT]]")
 	viper.SetDefault("ENV_VAR_FILE_SETUP_COMMAND", "")
@@ -50,8 +70,8 @@ func LoadConfig() {
 
 	viper.SetEnvPrefix("DRYDOCK_")
 	// optionally look for config in the working directory
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil {             // Handle errors reading the config file
+	err = viper.ReadInConfig() // Find and read the config file
+	if err != nil {            // Handle errors reading the config file
 		log.Error().Err(err).Msg("No config file loaded")
 	} else {
 		log.Info().Msg(fmt.Sprintf("Using config file: %s", viper.ConfigFileUsed()))

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
@@ -38,9 +39,8 @@ type ComposeRunData struct {
 	NewDockerComposePath           string
 	RemoveOrphans                  bool
 	AlwaysRecreateDeps             bool
-	CustomComposeCommand           string
+	ComposeCommand                 string
 	StopAllContainersBeforeRunning bool
-	ComposeFileNameOverride        string
 	PreRunCommand                  string
 	EnvVarFileSetupCommand         string
 }
@@ -67,15 +67,16 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 			c.StopAllContainersBeforeRunning = true
 			continue
 		}
-		if k == "customComposeCommand" {
-			c.CustomComposeCommand = v[0]
+		if k == "composeCommand" {
+			c.ComposeCommand = v[0]
 			continue
 		}
-		if k == "composeFileNameOverride" {
+		if k == "composeFileName" {
 			if v[0] == "" {
 				continue
 			}
-			newDockerComposePath, err := filepath.Abs(v[0])
+			newDockerComposePath, err := filepath.Abs(strings.Replace(v[0], "[[TIMESTAMP]]", fmt.Sprintf("%d", time.Now().Unix()), 1))
+
 			if err != nil {
 				return c, err
 			}
@@ -122,6 +123,12 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 		}
 	}
 	return c, nil
+}
+
+func (c ComposeRunData) ReplacePlaceholders() ComposeRunData {
+	c.NewDockerComposePath = strings.Replace(c.NewDockerComposePath, "[[TIMESTAMP]]", fmt.Sprintf("%d", time.Now().Unix()), 1)
+	c.ComposeCommand = strings.Replace(c.ComposeCommand, "[[COMPOSE_FILE_NAME]]", c.NewDockerComposePath, 1)
+	return c
 }
 
 type ComposeRunDataReturn struct {
@@ -184,9 +191,8 @@ func WriteComposeFile(composePath string, data []byte) error {
 func GenerateComposeCommand(compose *Compose, composeRunData ComposeRunData) []string {
 	log.Debug().Msg(fmt.Sprintf("Generating compose command for compose file: %s", compose.Path))
 	composeCommand := []string{"compose", "-f", compose.Path}
-	if composeRunData.CustomComposeCommand != "" {
-		customComposeCommand := strings.Fields(composeRunData.CustomComposeCommand)
-		composeCommand = append(composeCommand, customComposeCommand...)
+	if composeRunData.ComposeCommand != "" {
+		composeCommand = strings.Fields(composeRunData.ComposeCommand)
 	} else {
 		composeCommand = append(composeCommand, "up", "--build", "-d")
 	}
