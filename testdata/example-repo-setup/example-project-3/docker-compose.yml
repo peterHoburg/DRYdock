@@ -1,0 +1,8 @@
+services:
+  invalid-compose-file:
+    build:
+      dockerfile: ./Dockerfile
+    ports:
+      - { { INVALID } }:8001
+    volumes:
+      - .:/opt
