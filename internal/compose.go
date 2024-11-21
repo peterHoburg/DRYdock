@@ -15,6 +15,8 @@ import (
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/rs/zerolog/log"
+
+	"drydock/config"
 )
 
 type Compose struct {
@@ -75,6 +77,7 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 			if v[0] == "" {
 				continue
 			}
+			// The config.ROOT_DIR is being set and passed to the UI, this is just checking to make sure the user did not do anything weird, so it passes it to Abs()
 			newDockerComposePath, err := filepath.Abs(strings.Replace(v[0], "[[TIMESTAMP]]", fmt.Sprintf("%d", time.Now().Unix()), 1))
 
 			if err != nil {
@@ -281,11 +284,8 @@ func setNetwork(combinedCompose *Compose, networkName string) *Compose {
 
 func setEnvFile(compose *Compose) *Compose {
 	log.Debug().Msg(fmt.Sprintf("Setting env file: %s in compose: %s", compose.EnvFilePath, compose.Path))
-	envPath, err := filepath.Abs(strings.Replace(compose.EnvVarFileFormat, "[[ENVIRONMENT]]", compose.Environment, 1))
-	if err != nil {
-		log.Error().Err(err).Msg(fmt.Sprintf("Error setting env file: %s in compose: %s", envPath, compose.Path))
-		return compose
-	}
+	envPath := filepath.Join(config.ROOT_DIR, strings.Replace(compose.EnvVarFileFormat, "[[ENVIRONMENT]]", compose.Environment, 1))
+
 	for serviceName, service := range compose.Project.Services {
 		service.EnvFiles = []types.EnvFile{
 			{
