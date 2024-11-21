@@ -103,8 +103,11 @@
   <br>
   Stop all containers before running: <input type="checkbox" name="stopAllContainersBeforeRunning">
   <br>
+  Root Dir:     <textarea cols="{{len .RootDir}}" style="height:11PX;" name="rootDir">{{.RootDir}}</textarea>
+  <br>
   Compose Command:     <textarea cols="{{len .ComposeCommand}}" style="height:11PX;" name="composeCommand">{{.ComposeCommand}}</textarea>
   <br>
+<!--  TODO this should be dynamic based on the root dir?-->
   Compose file name: <textarea cols="{{len .ComposeFileName}}" style="height:11PX;" name="composeFileName">{{.ComposeFileName}}</textarea>
   <br>
   Pre-run command:            <textarea cols="{{len .PreRunCommand}}" style="height:11PX;" name="preRunCommand">{{.PreRunCommand}}</textarea>

@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var RootDir = getRootDir()
-
 func getRootDir() string {
 	//ex, err := os.Executable()
 	//if err != nil {
@@ -46,11 +44,13 @@ func InitLogger() {
 }
 
 func LoadConfig() {
-	composeFileName, err := filepath.Abs(filepath.Join(RootDir, "docker-compose-[[TIMESTAMP]].yml"))
+	rootDir := getRootDir()
+	composeFileName, err := filepath.Abs(filepath.Join(rootDir, "docker-compose-[[TIMESTAMP]].yml"))
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting composeFileName")
 		composeFileName = "docker-compose-[[TIMESTAMP]].yml"
 	}
+
 	viper.SetDefault("LOG_LEVEL", "debug")
 	viper.SetDefault("PORT", "1994")
 
@@ -58,6 +58,7 @@ func LoadConfig() {
 	viper.SetDefault("ALWAYS_RECREATE_DEPS", false)
 	viper.SetDefault("STOP_ALL_CONTAINERS_BEFORE_RUNNING", false)
 
+	viper.SetDefault("ROOT_DIR", rootDir)
 	viper.SetDefault("COMPOSE_COMMAND", "compose -f [[COMPOSE_FILE_NAME]] up --build -d")
 	viper.SetDefault("COMPOSE_FILE_NAME", composeFileName)
 	viper.SetDefault("PRE_RUN_COMMAND", "")

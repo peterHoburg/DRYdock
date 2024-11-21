@@ -15,8 +15,7 @@ import (
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/rs/zerolog/log"
-
-	"drydock/config"
+	"github.com/spf13/viper"
 )
 
 type Compose struct {
@@ -45,6 +44,7 @@ type ComposeRunData struct {
 	StopAllContainersBeforeRunning bool
 	PreRunCommand                  string
 	EnvVarFileSetupCommand         string
+	RootDir                        string
 }
 
 func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
@@ -97,6 +97,10 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 		}
 		if k == "envVarFileSetupCommand" {
 			c.EnvVarFileSetupCommand = v[0]
+			continue
+		}
+		if k == "rootDir" {
+			c.RootDir = v[0]
 			continue
 		}
 	}
@@ -282,9 +286,10 @@ func setNetwork(combinedCompose *Compose, networkName string) *Compose {
 	return combinedCompose
 }
 
-func setEnvFile(compose *Compose) *Compose {
+func setEnvFile(compose *Compose, rootDir string) *Compose {
 	log.Debug().Msg(fmt.Sprintf("Setting env file: %s in compose: %s", compose.EnvFilePath, compose.Path))
-	envPath := filepath.Join(config.RootDir, strings.Replace(compose.EnvVarFileFormat, "[[ENVIRONMENT]]", compose.Environment, 1))
+	// TODO this should not be pulled from viper, it should be passed.
+	envPath := filepath.Join(rootDir, strings.Replace(compose.EnvVarFileFormat, "[[ENVIRONMENT]]", compose.Environment, 1))
 
 	for serviceName, service := range compose.Project.Services {
 		service.EnvFiles = []types.EnvFile{
@@ -324,7 +329,7 @@ func GetAllComposeFiles() (*Compose, []*Compose, error) {
 			Project:       nil,
 		})
 	}
-	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeFiles)
+	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeFiles, viper.Get("ROOT_DIR").(string))
 
 	if err != nil {
 		return nil, nil, err
@@ -332,7 +337,7 @@ func GetAllComposeFiles() (*Compose, []*Compose, error) {
 	return rootComposeFile, childComposeFiles, nil
 }
 
-func LoadAndOrganizeComposeFiles(composeFiles []*Compose) (*Compose, []*Compose, error) {
+func LoadAndOrganizeComposeFiles(composeFiles []*Compose, rootDir string) (*Compose, []*Compose, error) {
 	log.Debug().Msg("Loading and organizing compose files")
 	updatedComposeFiles := make([]*Compose, 0)
 	for _, compose := range composeFiles {
@@ -342,7 +347,7 @@ func LoadAndOrganizeComposeFiles(composeFiles []*Compose) (*Compose, []*Compose,
 			log.Error().Err(err).Msg(compose.String())
 			return nil, nil, err
 		}
-		composeFile = setEnvFile(composeFile)
+		composeFile = setEnvFile(composeFile, rootDir)
 		updatedComposeFiles = append(updatedComposeFiles, composeFile)
 	}
 
@@ -421,7 +426,7 @@ func ComposeFilesToRunCommand(composeRunData ComposeRunData) (*ComposeRunDataRet
 			return nil, err
 		}
 	}
-	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeRunData.ComposeFiles)
+	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeRunData.ComposeFiles, composeRunData.RootDir)
 	if err != nil {
 		return nil, err
 	}
