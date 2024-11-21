@@ -22,7 +22,7 @@ jobs:
 #        run: go test ./...
 
       - name: Build binary
-        run: CGO_ENABLED=1 go build -o drydock
+        run: CGO_ENABLED=0 go build -o drydock
 
       - name: Create Release
         id: create_release
