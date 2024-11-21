@@ -2,6 +2,7 @@ package main
 
 import (
 	"drydock/api"
+	"drydock/config"
 )
 
 // TODO
@@ -9,7 +10,7 @@ import (
 // Add tests
 
 func main() {
-	LoadConfig()
-	InitLogger()
+	config.LoadConfig()
+	config.InitLogger()
 	api.Start()
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -56,6 +55,7 @@ func ComposeRun(c echo.Context) error {
 		log.Error().Err(err).Msg("")
 		return handleErr(c, err)
 	}
+	composeRunData = composeRunData.ReplacePlaceholders()
 
 	if composeRunData.PreRunCommand != "" {
 		command := strings.Split(composeRunData.PreRunCommand, " ")
@@ -69,15 +69,8 @@ func ComposeRun(c echo.Context) error {
 		log.Info().Msg(string(output))
 	}
 
-	if composeRunData.NewDockerComposePath == "" {
-		composeRunData.NewDockerComposePath, err = filepath.Abs(fmt.Sprintf("docker-compose-%d.yml", time.Now().Unix()))
-	}
 	composeRunData.ProjectName = fmt.Sprintf("project-%d", time.Now().Unix())
 	composeRunData.NetworkName = fmt.Sprintf("network-%d", time.Now().Unix())
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return handleErr(c, err)
-	}
 
 	composeRunDataReturn, err := internal.ComposeFilesToRunCommand(composeRunData)
 	if err != nil {

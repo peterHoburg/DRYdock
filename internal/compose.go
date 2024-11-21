@@ -10,10 +10,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/rs/zerolog/log"
+
+	"drydock/config"
 )
 
 type Compose struct {
@@ -38,9 +41,8 @@ type ComposeRunData struct {
 	NewDockerComposePath           string
 	RemoveOrphans                  bool
 	AlwaysRecreateDeps             bool
-	CustomComposeCommand           string
+	ComposeCommand                 string
 	StopAllContainersBeforeRunning bool
-	ComposeFileNameOverride        string
 	PreRunCommand                  string
 	EnvVarFileSetupCommand         string
 }
@@ -67,15 +69,17 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 			c.StopAllContainersBeforeRunning = true
 			continue
 		}
-		if k == "customComposeCommand" {
-			c.CustomComposeCommand = v[0]
+		if k == "composeCommand" {
+			c.ComposeCommand = v[0]
 			continue
 		}
-		if k == "composeFileNameOverride" {
+		if k == "composeFileName" {
 			if v[0] == "" {
 				continue
 			}
-			newDockerComposePath, err := filepath.Abs(v[0])
+			// The config.ROOT_DIR is being set and passed to the UI, this is just checking to make sure the user did not do anything weird, so it passes it to Abs()
+			newDockerComposePath, err := filepath.Abs(strings.Replace(v[0], "[[TIMESTAMP]]", fmt.Sprintf("%d", time.Now().Unix()), 1))
+
 			if err != nil {
 				return c, err
 			}
@@ -122,6 +126,12 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 		}
 	}
 	return c, nil
+}
+
+func (c ComposeRunData) ReplacePlaceholders() ComposeRunData {
+	c.NewDockerComposePath = strings.Replace(c.NewDockerComposePath, "[[TIMESTAMP]]", fmt.Sprintf("%d", time.Now().Unix()), 1)
+	c.ComposeCommand = strings.Replace(c.ComposeCommand, "[[COMPOSE_FILE_NAME]]", c.NewDockerComposePath, 1)
+	return c
 }
 
 type ComposeRunDataReturn struct {
@@ -184,9 +194,8 @@ func WriteComposeFile(composePath string, data []byte) error {
 func GenerateComposeCommand(compose *Compose, composeRunData ComposeRunData) []string {
 	log.Debug().Msg(fmt.Sprintf("Generating compose command for compose file: %s", compose.Path))
 	composeCommand := []string{"compose", "-f", compose.Path}
-	if composeRunData.CustomComposeCommand != "" {
-		customComposeCommand := strings.Fields(composeRunData.CustomComposeCommand)
-		composeCommand = append(composeCommand, customComposeCommand...)
+	if composeRunData.ComposeCommand != "" {
+		composeCommand = strings.Fields(composeRunData.ComposeCommand)
 	} else {
 		composeCommand = append(composeCommand, "up", "--build", "-d")
 	}
@@ -275,11 +284,8 @@ func setNetwork(combinedCompose *Compose, networkName string) *Compose {
 
 func setEnvFile(compose *Compose) *Compose {
 	log.Debug().Msg(fmt.Sprintf("Setting env file: %s in compose: %s", compose.EnvFilePath, compose.Path))
-	envPath, err := filepath.Abs(strings.Replace(compose.EnvVarFileFormat, "[[ENVIRONMENT]]", compose.Environment, 1))
-	if err != nil {
-		log.Error().Err(err).Msg(fmt.Sprintf("Error setting env file: %s in compose: %s", envPath, compose.Path))
-		return compose
-	}
+	envPath := filepath.Join(config.RootDir, strings.Replace(compose.EnvVarFileFormat, "[[ENVIRONMENT]]", compose.Environment, 1))
+
 	for serviceName, service := range compose.Project.Services {
 		service.EnvFiles = []types.EnvFile{
 			{

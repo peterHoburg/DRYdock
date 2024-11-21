@@ -103,14 +103,14 @@
   <br>
   Stop all containers before running: <input type="checkbox" name="stopAllContainersBeforeRunning">
   <br>
-  Custom Compose Command:     <textarea style="height:11PX;" name="customComposeCommand">{{.CustomComposeCommand}}</textarea>
+  Compose Command:     <textarea cols="{{len .ComposeCommand}}" style="height:11PX;" name="composeCommand">{{.ComposeCommand}}</textarea>
   <br>
-  Compose file name override: <textarea style="height:11PX;" name="composeFileNameOverride">{{.ComposeFileNameOverride}}</textarea>
+  Compose file name: <textarea cols="{{len .ComposeFileName}}" style="height:11PX;" name="composeFileName">{{.ComposeFileName}}</textarea>
   <br>
-  Pre-run command:            <textarea style="height:11PX;" name="preRunCommand">{{.PreRunCommand}}</textarea>
+  Pre-run command:            <textarea cols="{{len .PreRunCommand}}" style="height:11PX;" name="preRunCommand">{{.PreRunCommand}}</textarea>
   <br>
-  Env var file format:         <textarea style="height:11PX;" name="envVarFileFormat">{{.EnvVarFileFormat}}</textarea>
+  Env var file format:         <textarea cols="{{len .EnvVarFileFormat}}" style="height:11PX;" name="envVarFileFormat">{{.EnvVarFileFormat}}</textarea>
   <br>
-  Env var file setup command:   <textarea style="height:11PX;" name="envVarFileSetupCommand">{{.EnvVarFileSetupCommand}}</textarea>
+  Env var file setup command:   <textarea cols="{{len .EnvVarFileSetupCommand}}" style="height:11PX;" name="envVarFileSetupCommand">{{.EnvVarFileSetupCommand}}</textarea>
 </div>
 {{ end }}
