@@ -35,21 +35,23 @@ func newTemplate() *Templates {
 }
 
 type IndexData struct {
+	RootDir                string
+	ComposeFileRegex       string
 	ComposeCommand         string
 	ComposeFileName        string
 	PreRunCommand          string
 	EnvVarFileSetupCommand string
 	EnvVarFileFormat       string
-	RootDir                string
 }
 
 func (i *IndexData) LoadFromViper() *IndexData {
+	i.RootDir = viper.Get("ROOT_DIR").(string)
+	i.ComposeFileRegex = viper.Get("COMPOSE_FILE_REGEX").(string)
 	i.ComposeCommand = viper.Get("COMPOSE_COMMAND").(string)
 	i.ComposeFileName = viper.Get("COMPOSE_FILE_NAME").(string)
 	i.PreRunCommand = viper.Get("PRE_RUN_COMMAND").(string)
 	i.EnvVarFileSetupCommand = viper.Get("ENV_VAR_FILE_SETUP_COMMAND").(string)
 	i.EnvVarFileFormat = viper.Get("ENV_VAR_FORMAT").(string)
-	i.RootDir = viper.Get("ROOT_DIR").(string)
 	return i
 }
 
@@ -73,7 +75,7 @@ func Start() {
 
 	e.StaticFS("/static", staticFs)
 	e.FileFS("/favicon.ico", "static/favicon.png", staticFs)
-	e.GET("/compose", ComposeGet)
+	e.POST("/compose/list", ComposeGet)
 	e.POST("/compose/run", ComposeRun)
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", viper.Get("PORT").(string))))
 }

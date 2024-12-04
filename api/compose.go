@@ -28,7 +28,17 @@ func handleErr(c echo.Context, err error) error {
 
 func ComposeGet(c echo.Context) error {
 	// TODO make a second way of getting these files by setting root dir in the UI and refreshing the rows.
-	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles()
+	composeRunData := internal.ComposeRunData{}
+	form, err := c.FormParams()
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return handleErr(c, err)
+	}
+
+	composeRunData, err = composeRunData.LoadFromForm(form)
+
+	rootComposeFile, childComposeFiles, err := internal.GetAllComposeFiles(composeRunData)
+
 	var composeFiles []internal.Compose
 
 	if err != nil {
