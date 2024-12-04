@@ -49,29 +49,28 @@
 {{ block "containerRows" . }}
   {{range $val := .}}
     {{ if eq $val.Name "Root"}}
-<tr>
-      <td> {{$val.Name}}</td>
-      <td> {{$val.Path}}</td>
-  <input type="hidden" name="rootComposeFile" value="{{$val.Path}}">
-
-</tr>
+      <tr>
+            <td> {{$val.Name}}</td>
+            <td> {{$val.Path}}</td>
+        <input type="hidden" name="rootComposeFile" value="{{$val.Path}}">
+      </tr>
     {{ else }}
-    <tr>
-      <td> {{$val.Name}}</td>
-      <td> {{$val.Path}}</td>
-      <td>
-        <select name="{{$val.Path}}" title="This overwrites the Default Environment set at the top of the page.">
-          <option value="default">Default</option>
-          <option value="staging">Staging</option>
-          <option value="production">Production</option>
-        </select>
-          </span>
-      </td>
-      <td>
-        <input type="checkbox" name="{{$val.Path}}">
-      </td>
-    </tr>
-{{end}}
+      <tr>
+        <td> {{$val.Name}}</td>
+        <td> {{$val.Path}}</td>
+        <td>
+          <select name="{{$val.Path}}" title="This overwrites the Default Environment set at the top of the page.">
+            <option value="default">Default</option>
+            <option value="staging">Staging</option>
+            <option value="production">Production</option>
+          </select>
+            </span>
+        </td>
+        <td>
+          <input type="checkbox" name="{{$val.Path}}">
+        </td>
+      </tr>
+    {{end}}
   {{ end }}
 {{ end }}
 
