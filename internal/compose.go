@@ -45,6 +45,7 @@ type ComposeRunData struct {
 	PreRunCommand                  string
 	EnvVarFileSetupCommand         string
 	RootDir                        string
+	ComposeFileRegex               string
 }
 
 func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
@@ -101,6 +102,10 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 		}
 		if k == "rootDir" {
 			c.RootDir = v[0]
+			continue
+		}
+		if k == "composeFileRegex" {
+			c.ComposeFileRegex = v[0]
 			continue
 		}
 	}
@@ -309,9 +314,9 @@ func setProjectName(compose *Compose, projectName string) *Compose {
 	return compose
 }
 
-func GetAllComposeFiles() (*Compose, []*Compose, error) {
+func GetAllComposeFiles(composeRunData ComposeRunData) (*Compose, []*Compose, error) {
 	log.Debug().Msg("Getting all compose files")
-	dockerComposeRegex, err := regexp.Compile("docker-compose\\.ya?ml")
+	dockerComposeRegex, err := regexp.Compile(composeRunData.ComposeFileRegex)
 	if err != nil {
 		return nil, nil, err
 	}
