@@ -1,0 +1,4 @@
+services:
+  test-3:
+    build:
+      dockerfile: ./Dockerfile
