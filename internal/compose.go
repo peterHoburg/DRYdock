@@ -119,7 +119,7 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 			}
 			if k == "rootComposeFile" {
 				c.ComposeFiles = append(c.ComposeFiles, &Compose{
-					Path:             v[0] + "/docker-compose.yml",
+					Path:             v[0],
 					Active:           true,
 					Environment:      environment,
 					EnvVarFileFormat: envVarFileFormat,
@@ -127,7 +127,7 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 				continue
 			}
 			c.ComposeFiles = append(c.ComposeFiles, &Compose{
-				Path:             k + "/docker-compose.yml",
+				Path:             k,
 				Active:           true,
 				Environment:      environment,
 				EnvVarFileFormat: envVarFileFormat,

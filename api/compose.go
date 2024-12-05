@@ -46,9 +46,9 @@ func ComposeGet(c echo.Context) error {
 		return handleErr(c, err)
 	}
 
-	composeFiles = append(composeFiles, internal.Compose{Name: "Root", Path: rootComposeFile.Project.WorkingDir, Active: false})
+	composeFiles = append(composeFiles, internal.Compose{Name: "Root", Path: rootComposeFile.Project.ComposeFiles[0], Active: false})
 	for _, composeFile := range childComposeFiles {
-		composeFiles = append(composeFiles, internal.Compose{Name: composeFile.Name, Path: composeFile.Project.WorkingDir, Active: false})
+		composeFiles = append(composeFiles, internal.Compose{Name: composeFile.Name, Path: composeFile.Project.ComposeFiles[0], Active: false})
 	}
 	return c.Render(http.StatusOK, "containerRows", composeFiles)
 }
