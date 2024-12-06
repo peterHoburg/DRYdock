@@ -46,12 +46,16 @@ type ComposeRunData struct {
 	EnvVarFileSetupCommand         string
 	RootDir                        string
 	ComposeFileRegex               string
+	VariableInterpolationOptions   map[string]string
 }
 
 func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 	var defaultEnvironmentSelect string
 	var environment string
 	var envVarFileFormat string
+	if c.VariableInterpolationOptions == nil {
+		c.VariableInterpolationOptions = map[string]string{}
+	}
 
 	for k, v := range form {
 		if k == "defaultEnvironmentSelect" {
@@ -108,6 +112,22 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 			c.ComposeFileRegex = v[0]
 			continue
 		}
+		if k == "variableInterpolationOptions" {
+			options := strings.Split(v[0], "\n")
+			for _, option := range options {
+				splitOptions := strings.SplitN(option, "=", 2)
+				if len(splitOptions) != 2 {
+					continue
+				}
+				log.Debug().Msg(fmt.Sprintf("Variable interpolation option: %s", option))
+				optionKey := splitOptions[0]
+				err, optionValue := runInShell(splitOptions[1])
+				if err != nil {
+					return c, err
+				}
+				c.VariableInterpolationOptions[optionKey] = optionValue
+			}
+		}
 	}
 
 	for k, v := range form {
@@ -151,16 +171,33 @@ type ComposeRunDataReturn struct {
 func Pointer[T any](d T) *T {
 	return &d
 }
+func runInShell(command string) (error, string) {
+	log.Debug().Msg(fmt.Sprintf("Running command in shell: %s", command))
+	cmd := exec.Command("bash", "-c", command)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Error().Err(err).Msg(string(output))
+		return err, ""
+	}
+	return nil, strings.TrimSpace(string(output))
+}
 
 // LoadComposeFile loads the docker-compose file into github.com/compose-spec/compose-go/v2/types.Project object.
 // Also checks the compose files for basic correctness.
-func LoadComposeFile(compose *Compose) (*Compose, error) {
+func LoadComposeFile(compose *Compose, composeRunData ComposeRunData) (*Compose, error) {
 	log.Debug().Msg(fmt.Sprintf("Loading compose file: %s", compose.Path))
 	ctx := context.Background()
+	var envStringList []string
+	for k, v := range composeRunData.VariableInterpolationOptions {
+		envStringList = append(envStringList, fmt.Sprintf("%s=%s", k, v))
+	}
 
 	options, err := cli.NewProjectOptions(
 		[]string{compose.Path},
 		cli.WithoutEnvironmentResolution,
+		cli.WithOsEnv,
+		cli.WithInterpolation(true),
+		cli.WithEnv(envStringList),
 	)
 	if err != nil {
 		return nil, err
@@ -334,7 +371,7 @@ func GetAllComposeFiles(composeRunData ComposeRunData) (*Compose, []*Compose, er
 			Project:       nil,
 		})
 	}
-	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeFiles, viper.Get("ROOT_DIR").(string))
+	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeFiles, viper.Get("ROOT_DIR").(string), composeRunData)
 
 	if err != nil {
 		return nil, nil, err
@@ -342,12 +379,12 @@ func GetAllComposeFiles(composeRunData ComposeRunData) (*Compose, []*Compose, er
 	return rootComposeFile, childComposeFiles, nil
 }
 
-func LoadAndOrganizeComposeFiles(composeFiles []*Compose, rootDir string) (*Compose, []*Compose, error) {
+func LoadAndOrganizeComposeFiles(composeFiles []*Compose, rootDir string, composeRunData ComposeRunData) (*Compose, []*Compose, error) {
 	log.Debug().Msg("Loading and organizing compose files")
 	updatedComposeFiles := make([]*Compose, 0)
 	for _, compose := range composeFiles {
 		log.Trace().Msg(fmt.Sprintf("Loading compose file: %s", compose.Path))
-		composeFile, err := LoadComposeFile(compose)
+		composeFile, err := LoadComposeFile(compose, composeRunData)
 		if err != nil {
 			log.Error().Err(err).Msg(compose.String())
 			continue
@@ -431,7 +468,7 @@ func ComposeFilesToRunCommand(composeRunData ComposeRunData) (*ComposeRunDataRet
 			return nil, err
 		}
 	}
-	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeRunData.ComposeFiles, composeRunData.RootDir)
+	rootComposeFile, childComposeFiles, err := LoadAndOrganizeComposeFiles(composeRunData.ComposeFiles, composeRunData.RootDir, composeRunData)
 	if err != nil {
 		return nil, err
 	}

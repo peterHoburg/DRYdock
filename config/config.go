@@ -65,6 +65,7 @@ func LoadConfig() {
 	viper.SetDefault("PRE_RUN_COMMAND", "")
 	viper.SetDefault("ENV_VAR_FORMAT", ".env-[[ENVIRONMENT]]")
 	viper.SetDefault("ENV_VAR_FILE_SETUP_COMMAND", "")
+	viper.SetDefault("VARIABLE_INTERPOLATION_OPTIONS", "")
 
 	viper.SetConfigName("drydock")        // name of config file (without extension)
 	viper.SetConfigType("yaml")           // REQUIRED if the config file does not have the extension in the name
