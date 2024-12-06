@@ -46,12 +46,16 @@ type ComposeRunData struct {
 	EnvVarFileSetupCommand         string
 	RootDir                        string
 	ComposeFileRegex               string
+	VariableInterpolationOptions   map[string]string
 }
 
 func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 	var defaultEnvironmentSelect string
 	var environment string
 	var envVarFileFormat string
+	if c.VariableInterpolationOptions == nil {
+		c.VariableInterpolationOptions = map[string]string{}
+	}
 
 	for k, v := range form {
 		if k == "defaultEnvironmentSelect" {
@@ -108,6 +112,15 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 			c.ComposeFileRegex = v[0]
 			continue
 		}
+		if k == "variableInterpolationOptions" {
+			options := strings.Split(v[0], "\n")
+			for _, option := range options {
+				splitOptions := strings.SplitN(option, "=", 2)
+				optionKey := splitOptions[0]
+				optionValue := splitOptions[1]
+				c.VariableInterpolationOptions[optionKey] = optionValue
+			}
+		}
 	}
 
 	for k, v := range form {
@@ -163,7 +176,7 @@ func LoadComposeFile(compose *Compose) (*Compose, error) {
 		cli.WithoutEnvironmentResolution,
 		cli.WithOsEnv,
 		cli.WithInterpolation(true),
-		cli.WithEnv([]string{"USER_UID=999"}),
+		cli.WithEnv([]string{"USER_UID=$UID"}),
 	)
 	if err != nil {
 		return nil, err

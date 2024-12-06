@@ -137,5 +137,10 @@
   Env var file format:         <textarea cols="{{len .EnvVarFileFormat}}" style="height:11PX;" name="envVarFileFormat">{{.EnvVarFileFormat}}</textarea>
   <br>
   Env var file setup command:   <textarea cols="{{len .EnvVarFileSetupCommand}}" style="height:11PX;" name="envVarFileSetupCommand">{{.EnvVarFileSetupCommand}}</textarea>
+  <br>
+  <label>Enter Variable Interpolation Options (newline seperated):</label>
+  <textarea rows="3" cols="{{len .VariableInterpolationOptions}}" name="variableInterpolationOptions"
+            placeholder="KEY1=value1
+KEY2=value2"></textarea>
 </div>
 {{ end }}

@@ -35,13 +35,14 @@ func newTemplate() *Templates {
 }
 
 type IndexData struct {
-	RootDir                string
-	ComposeFileRegex       string
-	ComposeCommand         string
-	ComposeFileName        string
-	PreRunCommand          string
-	EnvVarFileSetupCommand string
-	EnvVarFileFormat       string
+	RootDir                      string
+	ComposeFileRegex             string
+	ComposeCommand               string
+	ComposeFileName              string
+	PreRunCommand                string
+	EnvVarFileSetupCommand       string
+	EnvVarFileFormat             string
+	VariableInterpolationOptions string
 }
 
 func (i *IndexData) LoadFromViper() *IndexData {
@@ -52,6 +53,7 @@ func (i *IndexData) LoadFromViper() *IndexData {
 	i.PreRunCommand = viper.Get("PRE_RUN_COMMAND").(string)
 	i.EnvVarFileSetupCommand = viper.Get("ENV_VAR_FILE_SETUP_COMMAND").(string)
 	i.EnvVarFileFormat = viper.Get("ENV_VAR_FORMAT").(string)
+	i.VariableInterpolationOptions = viper.Get("VARIABLE_INTERPOLATION_OPTIONS").(string)
 	return i
 }
 
