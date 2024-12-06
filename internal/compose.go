@@ -161,6 +161,9 @@ func LoadComposeFile(compose *Compose) (*Compose, error) {
 	options, err := cli.NewProjectOptions(
 		[]string{compose.Path},
 		cli.WithoutEnvironmentResolution,
+		cli.WithOsEnv,
+		cli.WithInterpolation(true),
+		cli.WithEnv([]string{"USER_UID=999"}),
 	)
 	if err != nil {
 		return nil, err
