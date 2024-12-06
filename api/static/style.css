@@ -1,0 +1,53 @@
+:root {
+  --dark-background: #121212;
+  --secondary-background: #1e1e1e;
+  --text-color: #e0e0e0;
+  --border-color: #555;
+  --placeholder-color: #aaa;
+  --button-background: #333;
+}
+
+body.dark-mode {
+  background-color: var(--dark-background);
+  color: var(--text-color);
+}
+
+/* Other elements adjustments for dark mode */
+.dark-mode table {
+  background-color: var(--secondary-background);
+  color: var(--text-color);
+}
+
+.dark-mode button {
+  background-color: var(--button-background);
+  color: var(--text-color);
+}
+
+/* Dark mode styling for text areas */
+body.dark-mode textarea {
+  background-color: var(--secondary-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+/* Optional: Change placeholder color */
+body.dark-mode textarea::placeholder {
+  color: var(--placeholder-color);
+}
+
+/* Dark mode styling for select elements */
+body.dark-mode select {
+  background-color: var(--secondary-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.5em;
+}
+
+/* Optional: Style for option elements within the select */
+body.dark-mode select option {
+  background-color: var(--secondary-background);
+  color: var(--text-color);
+}
+
+
