@@ -59,11 +59,11 @@ func LoadConfig() {
 	viper.SetDefault("STOP_ALL_CONTAINERS_BEFORE_RUNNING", false)
 
 	viper.SetDefault("ROOT_DIR", rootDir)
-	viper.SetDefault("COMPOSE_FILE_REGEX", "^docker-compose\\.ya?ml$")
 	viper.SetDefault("COMPOSE_COMMAND", "compose -f [[COMPOSE_FILE_NAME]] up --build -d")
 	viper.SetDefault("COMPOSE_FILE_NAME", composeFileName)
+	viper.SetDefault("COMPOSE_FILE_REGEX", "^docker-compose\\.ya?ml$")
 	viper.SetDefault("PRE_RUN_COMMAND", "")
-	viper.SetDefault("ENV_VAR_FORMAT", ".env-[[ENVIRONMENT]]")
+	viper.SetDefault("ENV_VAR_FILE_FORMAT", ".env-[[ENVIRONMENT]]")
 	viper.SetDefault("ENV_VAR_FILE_SETUP_COMMAND", "")
 	viper.SetDefault("VARIABLE_INTERPOLATION_OPTIONS", "")
 

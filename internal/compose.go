@@ -58,27 +58,27 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 	}
 
 	for k, v := range form {
-		if k == "defaultEnvironmentSelect" {
+		if k == "DefaultEnvironmentSelect" {
 			defaultEnvironmentSelect = v[0]
 			continue
 		}
-		if k == "removeOrphans" {
+		if k == "RemoveOrphans" {
 			c.RemoveOrphans = true
 			continue
 		}
-		if k == "alwaysRecreateDeps" {
+		if k == "AlwaysRecreateDeps" {
 			c.AlwaysRecreateDeps = true
 			continue
 		}
-		if k == "stopAllContainersBeforeRunning" {
+		if k == "StopAllContainersBeforeRunning" {
 			c.StopAllContainersBeforeRunning = true
 			continue
 		}
-		if k == "composeCommand" {
+		if k == "ComposeCommand" {
 			c.ComposeCommand = v[0]
 			continue
 		}
-		if k == "composeFileName" {
+		if k == "ComposeFileName" {
 			if v[0] == "" {
 				continue
 			}
@@ -92,27 +92,27 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 			continue
 		}
 
-		if k == "preRunCommand" {
+		if k == "PreRunCommand" {
 			c.PreRunCommand = v[0]
 			continue
 		}
-		if k == "envVarFileFormat" {
+		if k == "EnvVarFileFormat" {
 			envVarFileFormat = v[0]
 			continue
 		}
-		if k == "envVarFileSetupCommand" {
+		if k == "EnvVarFileSetupCommand" {
 			c.EnvVarFileSetupCommand = v[0]
 			continue
 		}
-		if k == "rootDir" {
+		if k == "RootDir" {
 			c.RootDir = v[0]
 			continue
 		}
-		if k == "composeFileRegex" {
+		if k == "ComposeFileRegex" {
 			c.ComposeFileRegex = v[0]
 			continue
 		}
-		if k == "variableInterpolationOptions" {
+		if k == "VariableInterpolationOptions" {
 			options := strings.Split(v[0], "\n")
 			for _, option := range options {
 				splitOptions := strings.SplitN(option, "=", 2)
@@ -131,13 +131,13 @@ func (c ComposeRunData) LoadFromForm(form url.Values) (ComposeRunData, error) {
 	}
 
 	for k, v := range form {
-		if (len(v) > 1 && v[1] == "on") || k == "rootComposeFile" {
-			if v[0] == "default" || k == "rootComposeFile" {
+		if (len(v) > 1 && v[1] == "on") || k == "RootComposeFile" {
+			if v[0] == "default" || k == "RootComposeFile" {
 				environment = defaultEnvironmentSelect
 			} else {
 				environment = v[0]
 			}
-			if k == "rootComposeFile" {
+			if k == "RootComposeFile" {
 				c.ComposeFiles = append(c.ComposeFiles, &Compose{
 					Path:             v[0],
 					Active:           true,
