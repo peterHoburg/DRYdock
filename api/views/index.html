@@ -38,8 +38,8 @@
 
 {{ block "containerForm" . }}
   <form id="checked-containers" hx-post="/compose/list" hx-trigger="load" hx-target="#tbody">
-    <label for="defaultEnvironmentSelect">Default Environment:</label>
-    <select name="defaultEnvironmentSelect">
+    <label for="DefaultEnvironmentSelect">Default Environment:</label>
+    <select name="DefaultEnvironmentSelect">
       <option value="staging">Staging</option>
       <option value="production">Production</option>
     </select>
@@ -71,7 +71,7 @@
       <tr>
             <td> {{$val.Name}}</td>
             <td> {{$val.Path}}</td>
-        <input type="hidden" name="rootComposeFile" value="{{$val.Path}}">
+        <input type="hidden" name="RootComposeFile" value="{{$val.Path}}">
       </tr>
     {{ else }}
       <tr>
@@ -117,30 +117,30 @@
 
 {{ block "compose_run_options" . }}
 <div>
-  Remove Orphans: <input type="checkbox" name="removeOrphans">
+  Remove Orphans: <input type="checkbox" name="RemoveOrphans">
   <br>
-  Always recreate deps: <input type="checkbox" name="alwaysRecreateDeps">
+  Always recreate deps: <input type="checkbox" name="AlwaysRecreateDeps">
   <br>
-  Stop all containers before running: <input type="checkbox" name="stopAllContainersBeforeRunning">
+  Stop all containers before running: <input type="checkbox" name="StopAllContainersBeforeRunning">
   <br>
-  Root Dir:     <textarea cols="{{len .RootDir}}" style="height:11PX;" name="rootDir">{{.RootDir}}</textarea>
+  Root Dir:     <textarea cols="{{len .RootDir}}" style="height:11PX;" name="RootDir">{{.RootDir}}</textarea>
   <br>
-  Compose Command:     <textarea cols="{{len .ComposeCommand}}" style="height:11PX;" name="composeCommand">{{.ComposeCommand}}</textarea>
+  Compose Command:     <textarea cols="{{len .ComposeCommand}}" style="height:11PX;" name="ComposeCommand">{{.ComposeCommand}}</textarea>
   <br>
 <!--  TODO this should be dynamic based on the root dir?-->
-  Generated Compose file name: <textarea cols="{{len .ComposeFileName}}" style="height:11PX;" name="composeFileName">{{.ComposeFileName}}</textarea>
+  Compose File Name: <textarea cols="{{len .ComposeFileName}}" style="height:11PX;" name="ComposeFileName">{{.ComposeFileName}}</textarea>
   <br>
-  Compose Files Regex: <textarea cols="{{len .ComposeFileRegex}}" style="height:11PX;" name="composeFileRegex">{{.ComposeFileRegex}}</textarea>
+  Compose Files Regex: <textarea cols="{{len .ComposeFileRegex}}" style="height:11PX;" name="ComposeFileRegex">{{.ComposeFileRegex}}</textarea>
   <br>
-  Pre-run command:            <textarea cols="{{len .PreRunCommand}}" style="height:11PX;" name="preRunCommand">{{.PreRunCommand}}</textarea>
+  Pre-run command:            <textarea cols="{{len .PreRunCommand}}" style="height:11PX;" name="PreRunCommand">{{.PreRunCommand}}</textarea>
   <br>
-  Env var file format:         <textarea cols="{{len .EnvVarFileFormat}}" style="height:11PX;" name="envVarFileFormat">{{.EnvVarFileFormat}}</textarea>
+  Env var file format:         <textarea cols="{{len .EnvVarFileFormat}}" style="height:11PX;" name="EnvVarFileFormat">{{.EnvVarFileFormat}}</textarea>
   <br>
-  Env var file setup command:   <textarea cols="{{len .EnvVarFileSetupCommand}}" style="height:11PX;" name="envVarFileSetupCommand">{{.EnvVarFileSetupCommand}}</textarea>
+  Env var file setup command:   <textarea cols="{{len .EnvVarFileSetupCommand}}" style="height:11PX;" name="EnvVarFileSetupCommand">{{.EnvVarFileSetupCommand}}</textarea>
   <br>
   <label>Variable Interpolation Options (newline seperated):</label>
-  <textarea rows="3" cols="{{len .VariableInterpolationOptions}}" name="variableInterpolationOptions"
+  <textarea rows="3" cols="{{len .VariableInterpolationOptions}}" name="VariableInterpolationOptions"
             placeholder="KEY1=echo $UID
-KEY2=<bash command>"></textarea>
+KEY2=<bash command>">{{.VariableInterpolationOptions}}</textarea>
 </div>
 {{ end }}

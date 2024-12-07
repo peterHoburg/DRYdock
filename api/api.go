@@ -47,12 +47,12 @@ type IndexData struct {
 
 func (i *IndexData) LoadFromViper() *IndexData {
 	i.RootDir = viper.Get("ROOT_DIR").(string)
-	i.ComposeFileRegex = viper.Get("COMPOSE_FILE_REGEX").(string)
 	i.ComposeCommand = viper.Get("COMPOSE_COMMAND").(string)
 	i.ComposeFileName = viper.Get("COMPOSE_FILE_NAME").(string)
+	i.ComposeFileRegex = viper.Get("COMPOSE_FILE_REGEX").(string)
 	i.PreRunCommand = viper.Get("PRE_RUN_COMMAND").(string)
+	i.EnvVarFileFormat = viper.Get("ENV_VAR_FILE_FORMAT").(string)
 	i.EnvVarFileSetupCommand = viper.Get("ENV_VAR_FILE_SETUP_COMMAND").(string)
-	i.EnvVarFileFormat = viper.Get("ENV_VAR_FORMAT").(string)
 	i.VariableInterpolationOptions = viper.Get("VARIABLE_INTERPOLATION_OPTIONS").(string)
 	return i
 }
