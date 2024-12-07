@@ -10,6 +10,7 @@ INSTALL_PATH=$(command -v "$BINARY_NAME" 2>/dev/null || true)
 if [ -n "$INSTALL_PATH" ]; then
     # Binary already exists, replace it where it is
     TARGET_DIR=$(dirname "$INSTALL_PATH")
+    echo "Previous install found $TARGET_DIR. Replacing..."
 else
     # Binary not found, check if $HOME/bin or $HOME/.local/bin is in the PATH
     if [[ ":$PATH:" == *":$HOME/bin:"* ]]; then
