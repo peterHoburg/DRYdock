@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+URL="https://github.com/peterHoburg/DRYdock/releases/latest/download/drydock"
+
+BINARY_NAME="drydock"
+# Check if the binary is already installed in the PATH
+INSTALL_PATH=$(command -v "$BINARY_NAME" 2>/dev/null || true)
+
+if [ -n "$INSTALL_PATH" ]; then
+    # Binary already exists, replace it where it is
+    TARGET_DIR=$(dirname "$INSTALL_PATH")
+else
+    # Binary not found, check if $HOME/bin or $HOME/.local/bin is in the PATH
+    if [[ ":$PATH:" == *":$HOME/bin:"* ]]; then
+        TARGET_DIR="$HOME/bin"
+    elif [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
+        TARGET_DIR="$HOME/.local/bin"
+    else
+        echo "Error: Neither \$HOME/bin nor \$HOME/.local/bin is in your PATH."
+        echo "Please add one of them to PATH and re-run this script."
+        exit 1
+    fi
+fi
+
+# Ensure the directory exists
+mkdir -p "$TARGET_DIR"
+
+# Check write permissions for the target directory
+if [ ! -w "$TARGET_DIR" ]; then
+    echo "Directory $TARGET_DIR is not writable by the current user."
+    echo "Please adjust directory permissions before re-running this script."
+    exit 1
+fi
+
+echo "Downloading $BINARY_NAME from $URL to $TARGET_DIR..."
+if ! curl -fLo "$TARGET_DIR/$BINARY_NAME" "$URL"; then
+    echo "Failed to download $URL. Please check the URL and try again."
+    exit 1
+fi
+
+# Make the binary executable
+chmod u+x "$TARGET_DIR/$BINARY_NAME"
+
+echo "$BINARY_NAME successfully installed in $TARGET_DIR."
